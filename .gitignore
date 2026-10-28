@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.expo/
+*.log
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+apps/api/data/
+coverage/

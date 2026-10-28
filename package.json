@@ -1,0 +1,14 @@
+{
+  "name": "sense-buddy",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "setup:local": "node scripts/setup-local.mjs",
+    "dev:api": "pnpm --filter @sense-buddy/api dev",
+    "dev:mobile": "pnpm --filter @sense-buddy/mobile start",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test:api": "pnpm --filter @sense-buddy/api smoke"
+  }
+}
