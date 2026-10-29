@@ -6,6 +6,7 @@ export default function Index() {
   const hydrated = useHydrated();
   const hasOnboarded = useBuddyStore((s) => s.hasOnboarded);
   const user = useBuddyStore((s) => s.user);
+  const mode = useBuddyStore((s) => s.mode);
 
   if (!hydrated) {
     return (
@@ -16,5 +17,6 @@ export default function Index() {
   }
   if (!hasOnboarded) return <Redirect href="/onboarding" />;
   if (!user) return <Redirect href="/login" />;
-  return <Redirect href="/home" />;
+  // Default entry is the canonical sense tab, not the welcome page.
+  return <Redirect href={mode === "visual" ? "/sense/see" : "/sense/listen"} />;
 }

@@ -47,6 +47,11 @@ export default function Profile() {
           </View>
 
           <BigButton
+            label={`⚙ ${S.navSettings}`}
+            color={ACCENT[mode]}
+            onPress={() => router.navigate("/settings" as never)}
+          />
+          <BigButton
             label={S.profileSignOut}
             color="#122539"
             dark={false}

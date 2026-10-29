@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { Mode, OrbState } from "@sense-buddy/shared";
+import type { Mode } from "@sense-buddy/shared";
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -18,19 +18,21 @@ export type Prefs = {
 
 export type BuddyUser = { id: string; name: string; email: string };
 
+export type SeeCapture = "live" | "manual";
+
 type State = {
   hasOnboarded: boolean;
   user: BuddyUser | null;
   mode: Mode;
+  seeCapture: SeeCapture;
   prefs: Prefs;
-  orbState: OrbState;
   lastReply: string;
   setMode: (mode: Mode) => void;
+  setSeeCapture: (c: SeeCapture) => void;
   completeOnboarding: (mode: Mode, userName: string) => void;
   signIn: (user: BuddyUser) => void;
   signOut: () => void;
   updatePrefs: (p: Partial<Prefs>) => void;
-  setOrbState: (s: OrbState) => void;
   setLastReply: (s: string) => void;
 };
 
@@ -40,22 +42,22 @@ export const useBuddyStore = create<State>()(
       hasOnboarded: false,
       user: null,
       mode: "visual",
+      seeCapture: "manual",
       prefs: { userName: "", voiceRate: 1, voicePitch: 1, hapticsEnabled: true, captionSize: "xlarge", highContrast: true, language: "system", emergencyName: "", emergencyPhone: "" },
-      orbState: "idle",
       lastReply: "",
       setMode: (mode) => set({ mode }),
+      setSeeCapture: (seeCapture) => set({ seeCapture }),
       completeOnboarding: (mode, userName) =>
         set((s) => ({ hasOnboarded: true, mode, prefs: { ...s.prefs, userName } })),
       signIn: (user) => set({ user }),
       signOut: () => set({ user: null }),
       updatePrefs: (p) => set((s) => ({ prefs: { ...s.prefs, ...p } })),
-      setOrbState: (orbState) => set({ orbState }),
       setLastReply: (lastReply) => set({ lastReply }),
     }),
     {
       name: "sense-buddy-store",
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (s) => ({ hasOnboarded: s.hasOnboarded, user: s.user, mode: s.mode, prefs: s.prefs }) as State,
+      partialize: (s) => ({ hasOnboarded: s.hasOnboarded, user: s.user, mode: s.mode, seeCapture: s.seeCapture, prefs: s.prefs }) as State,
     },
   ),
 );

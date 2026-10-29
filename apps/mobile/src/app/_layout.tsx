@@ -13,7 +13,8 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#060D14" }, animation: "fade" }} />
+        {/* animation:none: the old fade cross-rendered old+new GL orbs for a frame = flash. */}
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#060D14" }, animation: "none" }} />
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

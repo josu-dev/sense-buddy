@@ -40,11 +40,13 @@ aiRoutes.post("/chat", rateLimit("ai-chat", 30), async (c) => {
   }
 });
 
-aiRoutes.post("/see", rateLimit("ai-see", 20), async (c) => {
+aiRoutes.post("/see", async (c) => {
+  // TEMP-DEV: rateLimit("ai-see", 20) removed for easy testing — re-add before prod.
   const user = c.get("user") as AuthedUser;
   const body = SeeRequestSchema.safeParse(await c.req.json().catch(() => null));
   if (!body.success) return c.json({ error: "invalid_request", details: body.error.issues }, 400);
-  if (!(await ensureQuota(user.id, "see"))) return c.json({ error: "quota_exceeded", usage: await usageSummary(user.id) }, 402);
+  // TEMP-DEV: quota check disabled for easy testing — re-enable before prod.
+  // if (!(await ensureQuota(user.id, "see"))) return c.json({ error: "quota_exceeded", usage: await usageSummary(user.id) }, 402);
   try {
     const result = await analyzeScene(body.data);
     await recordUsage(user.id, "see", result.inputTokens, result.outputTokens);
@@ -55,11 +57,13 @@ aiRoutes.post("/see", rateLimit("ai-see", 20), async (c) => {
   }
 });
 
-aiRoutes.post("/listen", rateLimit("ai-listen", 30), async (c) => {
+aiRoutes.post("/listen", async (c) => {
+  // TEMP-DEV: rateLimit("ai-listen", 30) removed for easy testing — re-add before prod.
   const user = c.get("user") as AuthedUser;
   const body = ListenRequestSchema.safeParse(await c.req.json().catch(() => null));
   if (!body.success) return c.json({ error: "invalid_request", details: body.error.issues }, 400);
-  if (!(await ensureQuota(user.id, "listen"))) return c.json({ error: "quota_exceeded", usage: await usageSummary(user.id) }, 402);
+  // TEMP-DEV: quota check disabled for easy testing — re-enable before prod.
+  // if (!(await ensureQuota(user.id, "listen"))) return c.json({ error: "quota_exceeded", usage: await usageSummary(user.id) }, 402);
   try {
     const result = await listenAmbient(body.data);
     await recordUsage(user.id, "listen", result.inputTokens, result.outputTokens);

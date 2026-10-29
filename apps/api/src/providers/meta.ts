@@ -387,14 +387,21 @@ function wavEnergy(wav: Buffer): { peak: number; rms: number } | null {
 async function metaTranscribe(wav: Buffer, lang: string): Promise<string | null> {
   try {
     const form = new FormData();
+    // The `request` part must be typed as JSON (per the Meta docs' curl):
+    // a bare string part goes out as text/plain and risks a 400.
     form.append(
       "request",
-      JSON.stringify({
-        mode: "ENDPOINTING",
-        model: env.metaAsrModel,
-        audioEncoding: "WAV",
-        languageBias: lang === "es" ? ["Spanish", "English"] : ["English", "Spanish"],
-      }),
+      new Blob(
+        [
+          JSON.stringify({
+            mode: "ENDPOINTING",
+            model: env.metaAsrModel,
+            audioEncoding: "WAV",
+            languageBias: lang === "es" ? ["Spanish", "English"] : ["English", "Spanish"],
+          }),
+        ],
+        { type: "application/json" },
+      ),
     );
     form.append("audio", new Blob([Uint8Array.from(wav)], { type: "audio/wav" }), "clip.wav");
     const res = await fetch(`${env.metaBaseUrl}/asr/transcribe`, {

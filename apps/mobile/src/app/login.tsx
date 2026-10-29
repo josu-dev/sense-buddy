@@ -17,17 +17,19 @@ export default function Login() {
   const login = async (provider: "google" | "apple" | "guest") => {
     setBusy(provider);
     setNotice("");
+    // Land on the canonical sense tab right after auth.
+    const senseTarget = (mode === "visual" ? "/sense/see" : "/sense/listen") as never;
     try {
       const data = await api.mockLogin(provider, prefs.userName || "Demo Friend");
       signIn(data.user);
       void api.syncPreferences({ mode, voiceRate: prefs.voiceRate, hapticsEnabled: prefs.hapticsEnabled });
-      router.replace("/home");
+      router.replace(senseTarget);
     } catch {
       // Offline demo fallback: the hackathon demo must never dead-end.
       await setToken(null);
       signIn({ id: "offline-demo", name: prefs.userName || "Demo Friend", email: "offline@sensebuddy.app" });
       setNotice(S.loginOffline);
-      router.replace("/home");
+      router.replace(senseTarget);
     } finally {
       setBusy(null);
     }
