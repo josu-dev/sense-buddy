@@ -1,6 +1,7 @@
-import type { ChatResponse, ListenResponse, Mode, SeeResponse } from "@sense-buddy/shared";
+import type { ChatResponse, ListenResponse, Mode, SeeResponse, TalkResponse } from "@sense-buddy/shared";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
+import { getAppLang } from "./i18n";
 
 /**
  * All AI traffic goes to our Hono API — never directly to a model provider.
@@ -31,6 +32,8 @@ export class ApiError extends Error {
   }
 }
 
+export const isUnauthorized = (e: unknown): boolean => e instanceof ApiError && e.status === 401;
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = await getToken();
   const controller = new AbortController();
@@ -46,7 +49,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       },
     });
     const json = (await res.json().catch(() => null)) as (T & { error?: string; message?: string }) | null;
-    if (!res.ok) throw new ApiError(res.status, json?.message ?? json?.error ?? `Request failed (${res.status})`);
+    if (!res.ok) {
+      if (res.status === 401) await setToken(null); // sesión inválida: no reintentar con el mismo token
+      throw new ApiError(res.status, json?.message ?? json?.error ?? `Request failed (${res.status})`);
+    }
     return json as T;
   } finally {
     clearTimeout(timeout);
@@ -67,11 +73,16 @@ export const api = {
     return data;
   },
   chat: (mode: Mode, message: string, history: { role: "user" | "assistant"; content: string }[] = []) =>
-    request<ChatResponse>("/api/ai/chat", { method: "POST", body: JSON.stringify({ mode, message, history }) }),
+    request<ChatResponse>("/api/ai/chat", { method: "POST", body: JSON.stringify({ mode, message, history, lang: getAppLang() }) }),
   see: (question: string, imageBase64: string, mode: Mode) =>
-    request<SeeResponse>("/api/ai/see", { method: "POST", body: JSON.stringify({ question, imageBase64, mode }) }),
-  listen: (intent: "scan" | "speech", userName?: string) =>
-    request<ListenResponse>("/api/ai/listen", { method: "POST", body: JSON.stringify({ intent, userName }) }),
+    request<SeeResponse>("/api/ai/see", { method: "POST", body: JSON.stringify({ question, imageBase64, mode, lang: getAppLang() }) }),
+  listen: (intent: "scan" | "speech", userName?: string, audioBase64?: string) =>
+    request<ListenResponse>("/api/ai/listen", {
+      method: "POST",
+      body: JSON.stringify({ intent, userName, lang: getAppLang(), ...(audioBase64 ? { audioBase64 } : {}) }),
+    }),
+  talk: (audioBase64: string, mode: Mode) =>
+    request<TalkResponse>("/api/ai/talk", { method: "POST", body: JSON.stringify({ audioBase64, mode, lang: getAppLang() }) }),
   usage: () => request<Usage>("/api/me/usage"),
   syncPreferences: (body: Record<string, unknown>) =>
     request("/api/me/preferences", { method: "PATCH", body: JSON.stringify(body) }).catch(() => null),

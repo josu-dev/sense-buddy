@@ -3,37 +3,27 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BigButton, Screen } from "../components/ui";
+import { useStrings } from "../lib/i18n";
 import { useBuddyStore } from "../lib/store";
 import { speak } from "../lib/voice";
-
-const MODE_CARDS: { mode: Mode; icon: string; title: string; body: string; color: string }[] = [
-  {
-    mode: "visual",
-    icon: "◉",
-    title: "I can't see well",
-    body: "Buddy talks to you, and sees through your camera — telling you in steps and directions what is around you.",
-    color: "#FFB224",
-  },
-  {
-    mode: "hearing",
-    icon: "♪",
-    title: "I can't hear well",
-    body: "Buddy writes everything big on screen, captions speech, and vibrates in different patterns for sirens, doorbells and your name.",
-    color: "#3EE6FF",
-  },
-];
 
 export default function Onboarding() {
   const completeOnboarding = useBuddyStore((s) => s.completeOnboarding);
   const prefs = useBuddyStore((s) => s.prefs);
+  const S = useStrings();
   const [step, setStep] = useState(0);
   const [mode, setMode] = useState<Mode>("visual");
   const [name, setName] = useState("");
 
+  const MODE_CARDS: { mode: Mode; icon: string; title: string; body: string; color: string }[] = [
+    { mode: "visual", icon: "◉", title: S.obVisualTitle, body: S.obVisualBody, color: "#FFB224" },
+    { mode: "hearing", icon: "♪", title: S.obHearingTitle, body: S.obHearingBody, color: "#3EE6FF" },
+  ];
+
   const pickMode = (m: Mode) => {
     setMode(m);
     if (m === "visual") {
-      speak("Visual mode. Sense Buddy will talk to you and see for you. You can switch this any time at the top of the screen.", prefs);
+      speak(S.obSpeakVisual, prefs);
     }
   };
 
@@ -44,22 +34,22 @@ export default function Onboarding() {
           <View className="gap-5 pt-8">
             <Text className="text-center text-6xl">◉♪</Text>
             <Text className="text-center text-4xl font-bold leading-tight text-paper" accessibilityRole="header">
-              Hi, I'm Sense Buddy
+              {S.obHi}
             </Text>
             <Text className="text-center text-xl leading-relaxed text-muted">
-              I help you sense the world — seeing for you, or hearing for you — in the way that works best for your body.
+              {S.obSub}
             </Text>
-            <BigButton label="Let's start" hint="One quick question first" onPress={() => setStep(1)} />
-            <Text className="text-center text-base text-muted">You can change everything later in Settings.</Text>
+            <BigButton label={S.obStart} hint={S.obStartHint} onPress={() => setStep(1)} />
+            <Text className="text-center text-base text-muted">{S.obLater}</Text>
           </View>
         )}
 
         {step === 1 && (
           <View className="gap-4 pt-4">
             <Text className="text-3xl font-bold text-paper" accessibilityRole="header">
-              First — how can I help you best?
+              {S.obQ}
             </Text>
-            <Text className="text-lg text-muted">This is the most important choice. It changes how I talk to you.</Text>
+            <Text className="text-lg text-muted">{S.obQSub}</Text>
             {MODE_CARDS.map((card) => {
               const selected = mode === card.mode;
               return (
@@ -81,37 +71,37 @@ export default function Onboarding() {
                 </Pressable>
               );
             })}
-            <Text className="text-base text-muted">Need both? Pick your main one — you can switch at the top of the screen any time.</Text>
-            <BigButton label="Continue" color={mode === "visual" ? "#FFB224" : "#3EE6FF"} onPress={() => setStep(2)} />
+            <Text className="text-base text-muted">{S.obBoth}</Text>
+            <BigButton label={S.obContinue} color={mode === "visual" ? "#FFB224" : "#3EE6FF"} onPress={() => setStep(2)} />
           </View>
         )}
 
         {step === 2 && (
           <View className="gap-4 pt-4">
             <Text className="text-3xl font-bold text-paper" accessibilityRole="header">
-              Almost done
+              {S.obAlmost}
             </Text>
             <Text className="text-lg leading-relaxed text-muted">
-              What should I call you? In hearing mode, I listen for this name and alert you when someone calls it.
+              {S.obNameSub}
             </Text>
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="Your name"
+              placeholder={S.obNamePh}
               placeholderTextColor="#5E7A94"
-              accessibilityLabel="Your name"
+              accessibilityLabel={S.obNamePh}
               className="min-h-[64px] rounded-3xl border border-line bg-panel px-5 text-xl text-paper"
             />
             <BigButton
-              label="Create my account"
+              label={S.obCreate}
               color={mode === "visual" ? "#FFB224" : "#3EE6FF"}
               onPress={() => {
                 completeOnboarding(mode, name.trim());
                 router.replace("/login");
               }}
             />
-            <Pressable onPress={() => setStep(1)} accessibilityRole="button" accessibilityLabel="Go back">
-              <Text className="py-2 text-center text-lg text-muted">← Back</Text>
+            <Pressable onPress={() => setStep(1)} accessibilityRole="button" accessibilityLabel={S.obBack}>
+              <Text className="py-2 text-center text-lg text-muted">{S.obBack}</Text>
             </Pressable>
           </View>
         )}

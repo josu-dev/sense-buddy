@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 import { ACCENT, BigButton, BottomNav, Header, ModeSwitch, Screen } from "../components/ui";
 import { api } from "../lib/api";
+import { useStrings, type LangPref } from "../lib/i18n";
 import { useBuddyStore } from "../lib/store";
 import { speak, vibrateFor } from "../lib/voice";
 
@@ -33,52 +34,77 @@ export default function Settings() {
   const mode = useBuddyStore((s) => s.mode);
   const prefs = useBuddyStore((s) => s.prefs);
   const updatePrefs = useBuddyStore((s) => s.updatePrefs);
+  const S = useStrings();
 
   const save = (patch: Partial<typeof prefs>) => {
     updatePrefs(patch);
     void api.syncPreferences({ mode, voiceRate: prefs.voiceRate, hapticsEnabled: prefs.hapticsEnabled, captionSize: prefs.captionSize, highContrast: prefs.highContrast, ...patch });
   };
 
+  const langLabel = (l: LangPref): string => (l === "system" ? `📱 ${S.setLangSystem}` : l === "es" ? "Español" : "English");
+
   return (
     <>
       <Screen>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, gap: 14 }}>
-          <Header title="Settings" subtitle="Make Sense Buddy fit you" />
-          <Row label="How I help you">
+          <Header title={S.setTitle} subtitle={S.setSub} />
+          <Row label={S.setHelp}>
             <ModeSwitch />
           </Row>
-          <Row label="Your name (I listen for it)">
+          <Row label={S.setLang}>
+            <Chips options={["system", "es", "en"] as const} value={prefs.language} onPick={(language) => save({ language })} render={langLabel} />
+          </Row>
+          <Row label={S.setName}>
             <TextInput
               value={prefs.userName}
               onChangeText={(userName) => save({ userName })}
-              placeholder="Your name"
+              placeholder={S.setNamePh}
               placeholderTextColor="#5E7A94"
-              accessibilityLabel="Your name"
+              accessibilityLabel={S.setNamePh}
               className="min-h-[60px] rounded-2xl border border-line bg-ink px-4 text-xl text-paper"
             />
           </Row>
-          <Row label="Talking speed">
+          <Row label={S.setSpeed}>
             <Chips options={[0.75, 1, 1.25, 1.5]} value={prefs.voiceRate} onPick={(voiceRate) => save({ voiceRate })} render={(v) => `${v}×`} />
-            <BigButton label="🔊 Hear my voice" color="#122539" dark={false} onPress={() => speak("Hello! This is how I will talk to you. We can go slower or faster, whatever you like.", prefs)} />
+            <BigButton label={S.setHearVoice} color="#122539" dark={false} onPress={() => speak(S.setHearVoiceSample, prefs)} />
           </Row>
-          <Row label="Caption size">
-            <Chips options={["large", "xlarge"] as const} value={prefs.captionSize} onPick={(captionSize) => save({ captionSize })} render={(v) => (v === "large" ? "Large" : "Extra large")} />
+          <Row label={S.setCaption}>
+            <Chips options={["large", "xlarge"] as const} value={prefs.captionSize} onPick={(captionSize) => save({ captionSize })} render={(v) => (v === "large" ? S.setLarge : S.setXLarge)} />
           </Row>
-          <Row label="Vibration alerts">
+          <Row label={S.setVib}>
             <View className="flex-row items-center justify-between">
-              <Text className="flex-1 text-lg text-muted">Buzz for doorbells, sirens, alarms and your name</Text>
+              <Text className="flex-1 text-lg text-muted">{S.setVibSub}</Text>
               <Switch
                 value={prefs.hapticsEnabled}
                 onValueChange={(hapticsEnabled) => { save({ hapticsEnabled }); if (hapticsEnabled) vibrateFor("high", true); }}
-                accessibilityLabel="Vibration alerts on or off"
+                accessibilityLabel={S.setVibA11y}
               />
             </View>
           </Row>
-          <Row label="High contrast">
+          <Row label={S.setContrast}>
             <View className="flex-row items-center justify-between">
-              <Text className="flex-1 text-lg text-muted">Strong colors and big text everywhere</Text>
-              <Switch value={prefs.highContrast} onValueChange={(highContrast) => save({ highContrast })} accessibilityLabel="High contrast on or off" />
+              <Text className="flex-1 text-lg text-muted">{S.setContrastSub}</Text>
+              <Switch value={prefs.highContrast} onValueChange={(highContrast) => save({ highContrast })} accessibilityLabel={S.setContrastA11y} />
             </View>
+          </Row>
+          <Row label={S.setSos}>
+            <TextInput
+              value={prefs.emergencyName}
+              onChangeText={(emergencyName) => save({ emergencyName })}
+              placeholder={S.setSosNamePh}
+              placeholderTextColor="#5E7A94"
+              accessibilityLabel={S.setSosNamePh}
+              className="min-h-[60px] rounded-2xl border border-line bg-ink px-4 text-xl text-paper"
+            />
+            <TextInput
+              value={prefs.emergencyPhone}
+              onChangeText={(emergencyPhone) => save({ emergencyPhone })}
+              placeholder={S.setSosPhonePh}
+              placeholderTextColor="#5E7A94"
+              accessibilityLabel={S.setSosPhonePh}
+              keyboardType="phone-pad"
+              className="min-h-[60px] rounded-2xl border border-line bg-ink px-4 text-xl text-paper"
+            />
           </Row>
         </ScrollView>
       </Screen>

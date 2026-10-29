@@ -26,6 +26,8 @@ export const ChatRequestSchema = z.object({
   mode: ModeSchema,
   message: z.string().min(1).max(2000),
   history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(2000) })).max(12).default([]),
+  /** UI language — server replies (mock + live prompts) in this language. */
+  lang: z.enum(["es", "en"]).default("en"),
 });
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;
 
@@ -41,6 +43,7 @@ export const SeeRequestSchema = z.object({
   question: z.string().max(500).default("What is in front of me?"),
   /** Base64 JPEG, downscaled client-side to <=720px wide before upload. */
   imageBase64: z.string().min(10).max(2_800_000),
+  lang: z.enum(["es", "en"]).default("en"),
 });
 export type SeeRequest = z.infer<typeof SeeRequestSchema>;
 
@@ -56,6 +59,8 @@ export type SeeResponse = z.infer<typeof SeeResponseSchema>;
 
 export const SoundKindSchema = z.enum([
   "siren", "doorbell", "alarm", "name-call", "horn", "knock", "baby-cry", "dog-bark", "speech", "silence",
+  /** Measured loud burst (ffmpeg RMS/peak) that STT could not attribute to speech. */
+  "loud",
 ]);
 export type SoundKind = z.infer<typeof SoundKindSchema>;
 
@@ -66,6 +71,7 @@ export const ListenRequestSchema = z.object({
   /** Optional base64 audio clip (live mode); mock mode ignores it. */
   audioBase64: z.string().max(4_000_000).optional(),
   userName: z.string().max(60).optional(),
+  lang: z.enum(["es", "en"]).default("en"),
 });
 export type ListenRequest = z.infer<typeof ListenRequestSchema>;
 
@@ -81,10 +87,25 @@ export type ListenEvent = z.infer<typeof ListenEventSchema>;
 export const ListenResponseSchema = z.object({ events: z.array(ListenEventSchema) });
 export type ListenResponse = z.infer<typeof ListenResponseSchema>;
 
+export const TalkRequestSchema = z.object({
+  mode: ModeSchema.default("visual"),
+  /** Base64 voice clip (m4a from the app, or wav). Transcribed server-side. */
+  audioBase64: z.string().min(10).max(4_000_000),
+  lang: z.enum(["es", "en"]).default("en"),
+});
+export type TalkRequest = z.infer<typeof TalkRequestSchema>;
+
+export const TalkResponseSchema = z.object({
+  transcript: z.string(),
+  reply: z.string(),
+  shouldSpeak: z.boolean(),
+});
+export type TalkResponse = z.infer<typeof TalkResponseSchema>;
+
 /** Distinct vibration patterns so hearing-impaired users can tell alerts apart by touch. */
 export const HAPTIC_PATTERNS: Record<string, number[]> = {
   critical: [0, 400, 100, 400, 100, 400], // siren / alarm: long triple buzz
-  high: [0, 250, 80, 250], // doorbell / name call: double buzz
+  high: [0, 250, 80, 250], // doorbell / name call / loud sound: double buzz
   normal: [0, 120],
   low: [0, 60],
 };
@@ -101,7 +122,7 @@ export const PRIORITY_SOUNDS: { kind: SoundKind; label: string }[] = [
 ];
 
 /** Estimated upstream token cost per route, used for quota pre-checks. */
-export const ROUTE_TOKEN_COST = { chat: 900, see: 2600, listen: 700 } as const;
+export const ROUTE_TOKEN_COST = { chat: 2000, see: 4500, listen: 1200, talk: 2500 } as const;
 
 /** Free-tier daily budget per user (upstream tokens). Enforced server-side. */
 export const DEFAULT_DAILY_TOKEN_BUDGET = 60_000;

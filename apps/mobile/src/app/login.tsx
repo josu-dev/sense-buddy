@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";
 import { BigButton, Screen } from "../components/ui";
+import { useStrings } from "../lib/i18n";
 import { api, setToken } from "../lib/api";
 import { useBuddyStore } from "../lib/store";
 
@@ -9,6 +10,7 @@ export default function Login() {
   const signIn = useBuddyStore((s) => s.signIn);
   const mode = useBuddyStore((s) => s.mode);
   const prefs = useBuddyStore((s) => s.prefs);
+  const S = useStrings();
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
 
@@ -24,7 +26,7 @@ export default function Login() {
       // Offline demo fallback: the hackathon demo must never dead-end.
       await setToken(null);
       signIn({ id: "offline-demo", name: prefs.userName || "Demo Friend", email: "offline@sensebuddy.app" });
-      setNotice("Could not reach the Sense Buddy server, so you are in offline demo mode.");
+      setNotice(S.loginOffline);
       router.replace("/home");
     } finally {
       setBusy(null);
@@ -36,16 +38,16 @@ export default function Login() {
       <View className="gap-4 pt-10">
         <Text className="text-center text-5xl">◉♪</Text>
         <Text className="text-center text-4xl font-bold text-paper" accessibilityRole="header">
-          Welcome to Sense Buddy
+          {S.loginHi}
         </Text>
         <Text className="text-center text-lg leading-relaxed text-muted">
-          Sign in so your preferences, daily AI budget and buddy history stay yours.
+          {S.loginSub}
         </Text>
-        <BigButton label={busy === "google" ? "Signing in…" : "Continue with Google"} disabled={!!busy} onPress={() => login("google")} />
-        <BigButton label={busy === "apple" ? "Signing in…" : "Continue with Apple"} color="#F4F9FF" disabled={!!busy} onPress={() => login("apple")} />
+        <BigButton label={busy === "google" ? S.loginSigning : S.loginGoogle} disabled={!!busy} onPress={() => login("google")} />
+        <BigButton label={busy === "apple" ? S.loginSigning : S.loginApple} color="#F4F9FF" disabled={!!busy} onPress={() => login("apple")} />
         <BigButton
-          label={busy === "guest" ? "Signing in…" : "Continue as guest"}
-          hint="Fastest way to try the demo"
+          label={busy === "guest" ? S.loginSigning : S.loginGuest}
+          hint={S.loginGuestHint}
           color="#122539"
           dark={false}
           disabled={!!busy}
@@ -53,8 +55,7 @@ export default function Login() {
         />
         {notice ? <Text className="text-center text-base text-amber">{notice}</Text> : null}
         <Text className="mt-4 text-center text-sm leading-relaxed text-muted">
-          Demo build: sign-in is mocked on the device, but creates a real account and session on our server (BetterAuth).
-          Real Google/Apple OAuth plugs into the same backend — no app rewrite.
+          {S.loginNote}
         </Text>
       </View>
     </Screen>
