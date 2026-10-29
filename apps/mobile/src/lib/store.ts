@@ -11,6 +11,9 @@ export type Prefs = {
   hapticsEnabled: boolean;
   captionSize: "large" | "xlarge";
   highContrast: boolean;
+  language: "system" | "es" | "en";
+  emergencyName: string;
+  emergencyPhone: string;
 };
 
 export type BuddyUser = { id: string; name: string; email: string };
@@ -37,7 +40,7 @@ export const useBuddyStore = create<State>()(
       hasOnboarded: false,
       user: null,
       mode: "visual",
-      prefs: { userName: "", voiceRate: 1, voicePitch: 1, hapticsEnabled: true, captionSize: "xlarge", highContrast: true },
+      prefs: { userName: "", voiceRate: 1, voicePitch: 1, hapticsEnabled: true, captionSize: "xlarge", highContrast: true, language: "system", emergencyName: "", emergencyPhone: "" },
       orbState: "idle",
       lastReply: "",
       setMode: (mode) => set({ mode }),

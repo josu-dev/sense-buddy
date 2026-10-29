@@ -2,6 +2,7 @@ import { HAPTIC_PATTERNS } from "@sense-buddy/shared";
 import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 import { Vibration } from "react-native";
+import { getAppLang } from "./i18n";
 import type { Prefs } from "./store";
 
 /** Buddy speaks (visual mode). On-device TTS: free, offline, private. */
@@ -10,6 +11,7 @@ export function speak(text: string, prefs: Prefs, onDone?: () => void) {
   Speech.speak(text, {
     rate: prefs.voiceRate,
     pitch: prefs.voicePitch,
+    language: getAppLang() === "es" ? "es-ES" : "en-US",
     onDone,
     onStopped: onDone,
     onError: onDone,

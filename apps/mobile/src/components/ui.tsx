@@ -3,6 +3,7 @@ import { router, usePathname } from "expo-router";
 import type { ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useStrings } from "../lib/i18n";
 import { useBuddyStore } from "../lib/store";
 
 export const ACCENT = { visual: "#FFB224", hearing: "#3EE6FF" } as const;
@@ -56,6 +57,7 @@ export function BigButton({
 export function ModeSwitch() {
   const mode = useBuddyStore((s) => s.mode);
   const setMode = useBuddyStore((s) => s.setMode);
+  const S = useStrings();
   const item = (m: Mode, icon: string, title: string, sub: string) => {
     const active = mode === m;
     const color = ACCENT[m];
@@ -78,9 +80,9 @@ export function ModeSwitch() {
     );
   };
   return (
-    <View className="flex-row gap-3" accessibilityRole="radiogroup" accessibilityLabel="Choose how Sense Buddy helps you">
-      {item("visual", "◉", "I can't see", "Buddy talks & sees")}
-      {item("hearing", "♪", "I can't hear", "Buddy captions & feels")}
+    <View className="flex-row gap-3" accessibilityRole="radiogroup" accessibilityLabel={S.modeGroupLabel}>
+      {item("visual", "◉", S.modeCantSee, S.modeSeeSub)}
+      {item("hearing", "♪", S.modeCantHear, S.modeHearSub)}
     </View>
   );
 }
@@ -89,12 +91,13 @@ export function ModeSwitch() {
 export function BottomNav() {
   const pathname = usePathname();
   const mode = useBuddyStore((s) => s.mode);
+  const S = useStrings();
   const accent = ACCENT[mode];
   const items = [
-    { path: "/home", icon: "⌂", label: "Home" },
-    mode === "visual" ? { path: "/see", icon: "◎", label: "See" } : { path: "/listen", icon: "♪", label: "Listen" },
-    { path: "/profile", icon: "●", label: "Profile" },
-    { path: "/settings", icon: "⚙", label: "Settings" },
+    { path: "/home", icon: "⌂", label: S.navHome },
+    mode === "visual" ? { path: "/see", icon: "◎", label: S.navSee } : { path: "/listen", icon: "♪", label: S.navListen },
+    { path: "/profile", icon: "●", label: S.navProfile },
+    { path: "/settings", icon: "⚙", label: S.navSettings },
   ] as const;
   return (
     <View className="flex-row gap-2 border-t border-line bg-panel px-3 pb-6 pt-2">
@@ -105,7 +108,7 @@ export function BottomNav() {
             key={it.path}
             onPress={() => router.push(it.path as never)}
             accessibilityRole="button"
-            accessibilityLabel={`${it.label} page`}
+            accessibilityLabel={`${it.label} ${S.navPage}`}
             accessibilityState={{ selected: active }}
             className="min-h-[60px] flex-1 items-center justify-center rounded-2xl"
             style={{ backgroundColor: active ? accent : "transparent" }}

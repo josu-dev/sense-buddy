@@ -7,7 +7,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "ios": { "supportsTablet": true, "bundleIdentifier": "app.sensebuddy" },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.sensebuddy"
+    },
     "android": {
       "package": "app.sensebuddy",
       "adaptiveIcon": {
@@ -18,13 +21,33 @@
       },
       "predictiveBackGestureEnabled": false
     },
-    "web": { "favicon": "./assets/favicon.png", "bundler": "metro" },
-    "extra": { "apiUrl": "http://localhost:8787" },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "extra": {
+      "apiUrl": "http://localhost:8787"
+    },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-status-bar",
-      ["expo-camera", { "cameraPermission": "Sense Buddy uses your camera to see the world for you and describe where things are.", "microphonePermission": "Sense Buddy uses your microphone to hear important sounds for you.", "recordAudioAndroid": true }]
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Sense Buddy uses your camera to see the world for you and describe where things are.",
+          "microphonePermission": "Sense Buddy uses your microphone to hear important sounds for you.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Sense Buddy needs the microphone to hear sirens, doorbells and your name for you.",
+          "recordAudioAndroid": true
+        }
+      ],
+      "expo-localization"
     ]
   }
 }
