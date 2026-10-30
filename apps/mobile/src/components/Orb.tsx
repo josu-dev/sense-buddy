@@ -1,8 +1,10 @@
 import type { Mode, OrbState } from "@sense-buddy/shared";
 import { GLView, type ExpoWebGLRenderingContext } from "expo-gl";
 import { useIsFocused } from "expo-router";
+import { Ear, Eye, TriangleAlert } from "lucide-react-native";
 import { memo, useEffect, useRef, useState } from "react";
 import { AppState, Pressable, Text, View } from "react-native";
+import { useThemeColors } from "../lib/theme";
 
 const STATE_LABEL: Record<OrbState, string> = {
   idle: "Tap to talk · Double-tap to sense",
@@ -28,8 +30,8 @@ void main() {
  * Analytic 3D sphere, no textures / geometry / post passes — one draw call.
  * A transparent glass body with fast internal currents and a wobbling,
  * deforming edge — deliberately NO rings, waves or lines emanating out.
- * The corners fade exactly to the screen abyss (#060D14) so the square
- * surface edge never shows.
+ * The corners fade exactly to the theme background (u_abyss uniform) so the
+ * square surface edge never shows, in light or dark mode.
  */
 const FRAG = `
 precision mediump float;
@@ -41,6 +43,7 @@ uniform float u_alert;
 uniform vec3 u_colDeep;
 uniform vec3 u_colMain;
 uniform vec3 u_colHi;
+uniform vec3 u_abyss;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
@@ -49,7 +52,7 @@ void main() {
   float r = length(p);
   float ang = atan(p.y, p.x);
   float t = u_time;
-  vec3 abyss = vec3(0.023, 0.051, 0.078);
+  vec3 abyss = u_abyss;
 
   // Abyss + one soft breathing bloom. Nothing emanates from the orb.
   vec3 col = abyss;
@@ -161,13 +164,15 @@ export const Orb = memo(function Orb({
   const isFocused = useIsFocused();
   const [glFailed, setGlFailed] = useState(false);
   const lastTap = useRef(0);
+  const C = useThemeColors();
 
   // Latest inputs for the GL loop — refs so frames never re-render React.
-  const live = useRef({ state, mode, level, focused: true, appActive: true });
+  const live = useRef({ state, mode, level, focused: true, appActive: true, abyss: C.orbAbyss });
   live.current.state = state;
   live.current.mode = mode;
   live.current.level = level;
   live.current.focused = isFocused;
+  live.current.abyss = C.orbAbyss;
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (s) => {
@@ -214,6 +219,7 @@ export const Orb = memo(function Orb({
       const uDeep = u("u_colDeep");
       const uMain = u("u_colMain");
       const uHi = u("u_colHi");
+      const uAbyss = u("u_abyss");
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
       let raf = 0;
@@ -262,6 +268,8 @@ export const Orb = memo(function Orb({
         gl.uniform3f(uDeep, deep[0], deep[1], deep[2]);
         gl.uniform3f(uMain, main[0], main[1], main[2]);
         gl.uniform3f(uHi, hi[0], hi[1], hi[2]);
+        const ab = cur.abyss;
+        gl.uniform3f(uAbyss, ab[0], ab[1], ab[2]);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         gl.flush();
         gl.endFrameEXP();
@@ -308,14 +316,20 @@ export const Orb = memo(function Orb({
         <View style={{ width: size, height: size, overflow: "visible" }} className="items-center justify-center">
           {glFailed ? (
             // Fallback (no GL): layered translucent currents on the UI thread.
-            <View style={{ width: size * 0.78, height: size * 0.78, borderRadius: size / 2, backgroundColor: "#0A2530", borderWidth: 2, borderColor: accent, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            <View style={{ width: size * 0.78, height: size * 0.78, borderRadius: size / 2, backgroundColor: C.orbFallback, borderWidth: 2, borderColor: accent, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
               <View style={{ position: "absolute", width: size * 0.6, height: size * 0.4, borderRadius: size / 2, backgroundColor: accent, opacity: 0.28, transform: [{ rotate: "-18deg" }, { translateY: -size * 0.14 }] }} />
               <View style={{ position: "absolute", width: size * 0.65, height: size * 0.36, borderRadius: size / 2, backgroundColor: accent, opacity: 0.18, transform: [{ rotate: "14deg" }, { translateY: size * 0.16 }] }} />
-              <Text style={{ fontSize: size * 0.18 }}>{state === "alert" ? "!" : mode === "visual" ? "◉" : "♪"}</Text>
+              {state === "alert" ? (
+                <TriangleAlert size={size * 0.18} strokeWidth={2.25} color={accent} />
+              ) : mode === "visual" ? (
+                <Eye size={size * 0.18} strokeWidth={2} color={accent} />
+              ) : (
+                <Ear size={size * 0.18} strokeWidth={2} color={accent} />
+              )}
             </View>
           ) : (
             <GLView
-              style={{ width: glSize, height: glSize, transform: [{ scale: 1 / GL_SCALE }], backgroundColor: "#060D14" }}
+              style={{ width: glSize, height: glSize, transform: [{ scale: 1 / GL_SCALE }], backgroundColor: C.ink }}
               msaaSamples={0}
               onContextCreate={onContextCreate}
             />

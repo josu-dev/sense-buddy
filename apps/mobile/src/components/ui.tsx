@@ -1,5 +1,6 @@
 import type { Mode } from "@sense-buddy/shared";
 import { router, usePathname } from "expo-router";
+import { ArrowLeft, Ear, Ellipsis, Eye, House, Settings, User, type LucideIcon } from "lucide-react-native";
 import { useEffect, useState, type ReactNode } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
 import Animated, {
@@ -10,16 +11,17 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 import { useStrings } from "../lib/i18n";
 import { useSense } from "../lib/sense";
 import { useBuddyStore } from "../lib/store";
+import { useThemeColors } from "../lib/theme";
 
 export const ACCENT = { visual: "#FFB224", hearing: "#3EE6FF" } as const;
 
-export function Screen({ children }: { children: ReactNode }) {
+export function Screen({ children, edges }: { children: ReactNode; edges?: Edge[] }) {
   return (
-    <SafeAreaView className="flex-1 bg-ink">
+    <SafeAreaView edges={edges ?? ["top", "bottom", "left", "right"]} className="flex-1 bg-ink">
       <View className="flex-1 px-5 pt-3">{children}</View>
     </SafeAreaView>
   );
@@ -32,6 +34,8 @@ export function BigButton({
   color = "#FFB224",
   dark = true,
   disabled,
+  textColor,
+  icon: Icon,
 }: {
   label: string;
   hint?: string;
@@ -39,7 +43,18 @@ export function BigButton({
   color?: string;
   dark?: boolean;
   disabled?: boolean;
+  /** Explicit label color (e.g. the Apple button); defaults to the theme tone. */
+  textColor?: string;
+  /** Leading glyph (Lucide SVG). Decorative — the text label stays the a11y label. */
+  icon?: LucideIcon;
 }) {
+  const C = useThemeColors();
+  const labelColor = textColor ?? (dark ? C.onAccent : C.paper);
+  const labelEl = (
+    <Text className="text-center text-xl font-bold" style={{ color: labelColor }}>
+      {label}
+    </Text>
+  );
   return (
     <Pressable
       onPress={onPress}
@@ -48,17 +63,41 @@ export function BigButton({
       accessibilityLabel={label}
       accessibilityHint={hint}
       className="min-h-[72px] items-center justify-center rounded-3xl px-5 py-4 active:opacity-80"
-      style={{ backgroundColor: disabled ? "#1E3448" : color }}
+      style={{ backgroundColor: disabled ? C.line : color }}
     >
-      <Text className="text-center text-xl font-bold" style={{ color: dark ? "#060D14" : "#F4F9FF" }}>
-        {label}
-      </Text>
+      {Icon ? (
+        <View className="flex-row items-center justify-center gap-2">
+          <Icon size={24} strokeWidth={2.25} color={labelColor} />
+          {labelEl}
+        </View>
+      ) : (
+        labelEl
+      )}
       {hint ? (
-        <Text className="mt-0.5 text-center text-sm" style={{ color: dark ? "#3A2A00" : "#9FB4C7" }}>
+        <Text className="mt-0.5 text-center text-sm" style={{ color: dark ? C.onTintMuted : C.muted }}>
           {hint}
         </Text>
       ) : null}
     </Pressable>
+  );
+}
+
+/**
+ * Brand mark: the two sense glyphs (Eye = see, Ear = hear) in mode accents.
+ * Decorative — hidden from screen readers; every usage pairs it with a
+ * real header right below.
+ */
+export function BrandMark({ size = 52 }: { size?: number }) {
+  const C = useThemeColors();
+  return (
+    <View
+      className="flex-row items-center justify-center gap-3"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Eye size={size} strokeWidth={2} color={C.accentText.visual} />
+      <Ear size={size} strokeWidth={2} color={C.accentText.hearing} />
+    </View>
   );
 }
 
@@ -72,6 +111,7 @@ export function BigButton({
 export function ModeNotch() {
   const { tab: activeTab, goSee, goListen } = useSense();
   const S = useStrings();
+  const C = useThemeColors();
   const active: Mode = activeTab === "see" ? "visual" : "hearing";
 
   const pick = (m: Mode) => {
@@ -98,7 +138,7 @@ export function ModeNotch() {
           elevation: selected ? 8 : 0,
         }}
       >
-        <Text className="text-[17px] font-semibold" style={{ color: selected ? "#04211C" : "#8FA6B8" }}>
+        <Text className="text-[17px] font-semibold" style={{ color: selected ? C.onCyan : C.tabIdle }}>
           {label}
         </Text>
       </Pressable>
@@ -109,7 +149,7 @@ export function ModeNotch() {
     <View className="items-center pb-3 pt-1">
       <View
         className="w-[300px] max-w-full flex-row rounded-full border border-line p-1"
-        style={{ backgroundColor: "rgba(10,24,38,0.82)" }}
+        style={{ backgroundColor: C.scrim }}
         accessibilityRole="tablist"
         accessibilityLabel={S.modeGroupLabel}
       >
@@ -120,22 +160,23 @@ export function ModeNotch() {
   );
 }
 
-/** "⋯" corner button + sheet (Home · Profile · Settings) for the stage screens. */
+/** Ghost corner button + sheet (Home · Profile · Settings) for the stage screens. */
 export function MoreMenu() {
   const [open, setOpen] = useState(false);
   const S = useStrings();
+  const C = useThemeColors();
   const go = (path: string) => {
     setOpen(false);
     router.push(path as never);
   };
-  const item = (path: string, icon: string, label: string) => (
+  const item = (path: string, Icon: LucideIcon, label: string) => (
     <Pressable
       onPress={() => go(path)}
       accessibilityRole="button"
       accessibilityLabel={label}
       className="min-h-[60px] flex-row items-center gap-3 rounded-2xl bg-panel px-4 active:opacity-80"
     >
-      <Text className="text-xl text-paper">{icon}</Text>
+      <Icon size={22} strokeWidth={2.25} color={C.paper} />
       <Text className="text-lg font-semibold text-paper">{label}</Text>
     </Pressable>
   );
@@ -145,17 +186,16 @@ export function MoreMenu() {
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={S.menu}
-        className="h-[52px] w-[52px] items-center justify-center rounded-full border border-line"
-        style={{ backgroundColor: "rgba(10,24,38,0.82)" }}
+        className="h-[52px] w-[52px] items-center justify-center active:opacity-60"
       >
-        <Text className="text-xl font-bold text-paper">•••</Text>
+        <Ellipsis size={28} strokeWidth={2.25} color={C.paper} />
       </Pressable>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable onPress={() => setOpen(false)} className="flex-1 justify-end bg-black/60 px-5 pb-10" accessibilityLabel={S.menu}>
           <View className="gap-2 rounded-[28px] border border-line bg-ink p-3">
-            {item("/home", "⌂", S.navHome)}
-            {item("/profile", "●", S.navProfile)}
-            {item("/settings", "⚙", S.navSettings)}
+            {item("/home", House, S.navHome)}
+            {item("/profile", User, S.navProfile)}
+            {item("/settings", Settings, S.navSettings)}
           </View>
         </Pressable>
       </Modal>
@@ -163,7 +203,7 @@ export function MoreMenu() {
   );
 }
 
-/** Stage header: centered View/Listen notch with the ⋯ menu at the right (reference layout). */
+/** Stage header: centered View/Listen notch with the ghost menu at the right (reference layout). */
 export function StageHeader() {
   return (
     <View className="flex-row items-start">
@@ -214,9 +254,11 @@ export function ModeSwitch() {
   const mode = useBuddyStore((s) => s.mode);
   const setMode = useBuddyStore((s) => s.setMode);
   const S = useStrings();
-  const item = (m: Mode, icon: string, title: string, sub: string) => {
+  const C = useThemeColors();
+  const item = (m: Mode, Icon: LucideIcon, title: string, sub: string) => {
     const active = mode === m;
     const color = ACCENT[m];
+    const titleColor = active ? C.onAccent : C.accentText[m];
     return (
       <Pressable
         onPress={() => setMode(m)}
@@ -224,12 +266,15 @@ export function ModeSwitch() {
         accessibilityState={{ selected: active }}
         accessibilityLabel={`${title} mode. ${sub}`}
         className="min-h-[68px] flex-1 items-center justify-center rounded-3xl border-2 px-2 py-2"
-        style={{ backgroundColor: active ? color : "#0D1B29", borderColor: color }}
+        style={{ backgroundColor: active ? color : C.panel, borderColor: color }}
       >
-        <Text className="text-lg font-bold" style={{ color: active ? "#060D14" : color }}>
-          {icon} {title}
-        </Text>
-        <Text className="text-xs" style={{ color: active ? "#243447" : "#9FB4C7" }}>
+        <View className="flex-row items-center justify-center gap-2">
+          <Icon size={22} strokeWidth={2.25} color={titleColor} />
+          <Text className="text-lg font-bold" style={{ color: titleColor }}>
+            {title}
+          </Text>
+        </View>
+        <Text className="text-xs" style={{ color: active ? C.onAccentSub : C.muted }}>
           {sub}
         </Text>
       </Pressable>
@@ -237,8 +282,8 @@ export function ModeSwitch() {
   };
   return (
     <View className="flex-row gap-3" accessibilityRole="radiogroup" accessibilityLabel={S.modeGroupLabel}>
-      {item("visual", "◉", S.modeCantSee, S.modeSeeSub)}
-      {item("hearing", "♪", S.modeCantHear, S.modeHearSub)}
+      {item("visual", Eye, S.modeCantSee, S.modeSeeSub)}
+      {item("hearing", Ear, S.modeCantHear, S.modeHearSub)}
     </View>
   );
 }
@@ -247,53 +292,81 @@ export function ModeSwitch() {
  * Chunky bottom menu for NON-sense pages (home / profile / settings).
  * Only three shortcuts: Home (left) · Sense (center, mode's canonical tab)
  * · Profile (right). Sense screens use StageHeader instead — never this.
+ *
+ * Ghost tabs: no border/fill — the active tab shows in the mode accent,
+ * idle tabs dim. Wrapped in its own bottom SafeAreaView painted
+ * panel-colored so the phone's bottom reserved (home-indicator) area
+ * blends with the bar instead of showing the gray system background.
+ * Pair with `<Screen edges={["top", "left", "right"]}>` to avoid double
+ * bottom inset.
  */
 export function BottomNav() {
   const pathname = usePathname();
   const mode = useBuddyStore((s) => s.mode);
   const S = useStrings();
-  const accent = ACCENT[mode];
+  const C = useThemeColors();
   const sensePath = mode === "visual" ? "/sense/see" : "/sense/listen";
-  const senseIcon = mode === "visual" ? "◎" : "♪";
-  const items = [
-    { path: "/home", icon: "⌂", label: S.navHome, active: pathname === "/home" },
-    { path: sensePath, icon: senseIcon, label: S.navSense, active: pathname.startsWith("/sense") },
+  const SenseIcon = mode === "visual" ? Eye : Ear;
+  const items: { path: string; Icon: LucideIcon; label: string; active: boolean }[] = [
+    { path: "/home", Icon: House, label: S.navHome, active: pathname === "/home" },
+    { path: sensePath, Icon: SenseIcon, label: S.navSense, active: pathname.startsWith("/sense") },
     // Settings is a Profile detail page — keep Profile lit while there.
-    { path: "/profile", icon: "●", label: S.navProfile, active: pathname === "/profile" || pathname === "/settings" },
-  ] as const;
+    { path: "/profile", Icon: User, label: S.navProfile, active: pathname === "/profile" || pathname === "/settings" },
+  ];
   return (
-    <View className="flex-row gap-2 border-t border-line bg-panel px-3 pb-6 pt-2">
-      {items.map((it) => {
-        return (
-          <Pressable
-            key={it.label}
-            onPress={() => router.navigate(it.path as never)}
-            accessibilityRole="button"
-            accessibilityLabel={`${it.label} ${S.navPage}`}
-            accessibilityState={{ selected: it.active }}
-            className="min-h-[60px] flex-1 items-center justify-center rounded-2xl"
-            style={{ backgroundColor: it.active ? accent : "transparent" }}
-          >
-            <Text className="text-2xl" style={{ color: it.active ? "#060D14" : "#F4F9FF" }}>
-              {it.icon}
-            </Text>
-            <Text className="text-sm font-semibold" style={{ color: it.active ? "#060D14" : "#9FB4C7" }}>
-              {it.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <SafeAreaView edges={["bottom", "left", "right"]} style={{ backgroundColor: C.panel }}>
+      <View className="flex-row gap-2 border-t border-line bg-panel px-3 pb-1 pt-2">
+        {items.map((it) => {
+          return (
+            <Pressable
+              key={it.path}
+              onPress={() => router.navigate(it.path as never)}
+              accessibilityRole="button"
+              accessibilityLabel={`${it.label} ${S.navPage}`}
+              accessibilityState={{ selected: it.active }}
+              className="min-h-[64px] flex-1 items-center justify-center active:opacity-60"
+            >
+              <it.Icon size={28} strokeWidth={2.25} color={it.active ? C.accentText[mode] : C.tabIdle} />
+            </Pressable>
+          );
+        })}
+      </View>
+    </SafeAreaView>
   );
 }
 
-export function Header({ title, subtitle }: { title: string; subtitle?: string }) {
-  return (
-    <View className="mb-4">
+export function Header({
+  title,
+  subtitle,
+  onBack,
+  backLabel,
+}: {
+  title: string;
+  subtitle?: string;
+  onBack?: () => void;
+  backLabel?: string;
+}) {
+  const C = useThemeColors();
+  const text = (
+    <View className={onBack ? "flex-1" : undefined}>
       <Text className="text-3xl font-bold text-paper" accessibilityRole="header">
         {title}
       </Text>
       {subtitle ? <Text className="mt-1 text-lg text-muted">{subtitle}</Text> : null}
+    </View>
+  );
+  if (!onBack) return <View className="mb-4">{text}</View>;
+  return (
+    <View className="mb-4 flex-row items-center gap-3">
+      <Pressable
+        onPress={onBack}
+        accessibilityRole="button"
+        accessibilityLabel={backLabel ?? "Back"}
+        className="h-[52px] w-[52px] items-center justify-center active:opacity-60"
+      >
+        <ArrowLeft size={28} strokeWidth={2.25} color={C.paper} />
+      </Pressable>
+      {text}
     </View>
   );
 }

@@ -11,6 +11,7 @@ import { useStrings } from "../../lib/i18n";
 import { announce } from "../../lib/screenreader";
 import { useSense } from "../../lib/sense";
 import { useBuddyStore } from "../../lib/store";
+import { useThemeColors } from "../../lib/theme";
 import { vibrateFor } from "../../lib/voice";
 
 export default function Listen() {
@@ -24,6 +25,7 @@ export default function Listen() {
     setOrbStateState(s);
   };
   const S = useStrings();
+  const C = useThemeColors();
   // Capture mode lives in sense/_layout so it survives tab switches.
   const { listenCapture: captureMode, setListenCapture: setCaptureMode } = useSense();
   const [events, setEvents] = useState<(ListenEvent & { at: number })[]>([]);
@@ -196,7 +198,7 @@ export default function Listen() {
           <View
             className="rounded-[28px] border border-line p-4"
             style={{
-              backgroundColor: "rgba(10,24,38,0.88)",
+              backgroundColor: C.scrimStrong,
               overflow: "hidden",
               shadowColor: ACCENT.hearing,
               shadowOpacity: 0.18,
@@ -231,7 +233,7 @@ export default function Listen() {
                       className="min-h-[36px] items-center justify-center rounded-full px-3"
                       style={{ backgroundColor: selected ? ACCENT.hearing : "transparent" }}
                     >
-                      <Text className="text-[13px] font-bold" style={{ color: selected ? "#04211C" : "#8FA6B8" }}>
+                      <Text className="text-[13px] font-bold" style={{ color: selected ? C.onCyan : C.tabIdle }}>
                         {label}
                       </Text>
                     </Pressable>
@@ -251,7 +253,7 @@ export default function Listen() {
                   className="mt-1 min-h-[52px] items-center justify-center rounded-full px-4"
                   style={{ backgroundColor: ACCENT.hearing }}
                 >
-                  <Text className="text-[16px] font-bold" style={{ color: "#04211C" }}>
+                  <Text className="text-[16px] font-bold" style={{ color: C.onCyan }}>
                     {S.listenSignInAgain}
                   </Text>
                 </Pressable>

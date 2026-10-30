@@ -2,6 +2,7 @@ import type { OrbState } from "@sense-buddy/shared";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { router, useIsFocused } from "expo-router";
+import { Camera } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, Text, View, useWindowDimensions, type GestureResponderEvent, type PanResponderGestureState } from "react-native";
 import { Orb } from "../../components/Orb";
@@ -9,6 +10,7 @@ import { ACCENT } from "../../components/ui";
 import { api, isUnauthorized } from "../../lib/api";
 import { useStrings } from "../../lib/i18n";
 import { useBuddyStore } from "../../lib/store";
+import { useThemeColors } from "../../lib/theme";
 import { speak, stopSpeaking } from "../../lib/voice";
 
 /** Live mode re-describes the scene on this cadence (skipped while busy). */
@@ -42,6 +44,7 @@ export default function See() {
   const [orbState, setOrbState] = useState<OrbState>("idle");
   const setLastReply = useBuddyStore((s) => s.setLastReply);
   const S = useStrings();
+  const C = useThemeColors();
   const question = S.seeQ1;
 
   // Tabs keep this mounted in the background: never narrate over /listen.
@@ -248,7 +251,7 @@ export default function See() {
                   overflow: "hidden",
                   borderWidth: 1,
                   borderColor: "rgba(255,178,36,0.45)",
-                  backgroundColor: "rgba(10,24,38,0.88)",
+                  backgroundColor: C.scrimStrong,
                   shadowColor: ACCENT.visual,
                   shadowOpacity: 0.3,
                   shadowRadius: 12,
@@ -277,12 +280,12 @@ export default function See() {
                   borderRadius: 24,
                   borderWidth: 1,
                   borderColor: "rgba(255,178,36,0.45)",
-                  backgroundColor: "rgba(10,24,38,0.88)",
+                  backgroundColor: C.scrimStrong,
                 }}
               >
                 {permission ? (
                   <>
-                    <Text className="text-2xl text-paper">📷</Text>
+                    <Camera size={28} strokeWidth={2.25} color={C.paper} />
                     <Text className="text-[13px] font-semibold text-paper">{S.seeAllowCamShort}</Text>
                   </>
                 ) : null}
@@ -308,14 +311,14 @@ export default function See() {
                 elevation: 8,
               }}
             >
-              <Text className="text-[18px] font-semibold" style={{ color: "#2A1A00" }}>
+              <Text className="text-[18px] font-semibold" style={{ color: C.onAmber }}>
                 {S.seeSessionBtn}
               </Text>
             </Pressable>
           ) : (
             <View
               className="w-[300px] max-w-full flex-row rounded-full border border-line p-1"
-              style={{ backgroundColor: "rgba(10,24,38,0.82)" }}
+              style={{ backgroundColor: C.scrim }}
               accessibilityRole="radiogroup"
               accessibilityLabel={S.seeCaptureMode}
             >
@@ -339,7 +342,7 @@ export default function See() {
                       elevation: selected ? 8 : 0,
                     }}
                   >
-                    <Text className="text-[18px] font-semibold" style={{ color: selected ? "#2A1A00" : "#8FA6B8" }}>
+                    <Text className="text-[18px] font-semibold" style={{ color: selected ? C.onAmber : C.tabIdle }}>
                       {label}
                     </Text>
                   </Pressable>

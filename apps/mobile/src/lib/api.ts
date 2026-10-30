@@ -1,4 +1,4 @@
-import type { ChatResponse, ListenResponse, Mode, SeeResponse, TalkResponse } from "@sense-buddy/shared";
+import type { ChatResponse, ListenResponse, Mode, PreferencePatch, SeeResponse, TalkResponse } from "@sense-buddy/shared";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 import { getAppLang } from "./i18n";
@@ -61,17 +61,30 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export type Usage = { usedToday: number; dailyBudget: number; remaining: number };
 
+/** Server `preference` row as returned by GET /api/me (drizzle serializes dates). */
+export type ServerPreference = PreferencePatch & { userId: string; updatedAt: string };
+
+export type MeResponse = {
+  user: { id: string; name: string; email: string };
+  preference: ServerPreference | null;
+  usage: Usage;
+};
+
 export const api = {
   baseUrl: API_URL,
   /** Mock OAuth (hackathon). Swaps 1:1 for BetterAuth social sign-in later. */
   async mockLogin(provider: "google" | "apple" | "guest", name: string) {
-    const data = await request<{ token: string; user: { id: string; name: string; email: string } }>("/api/dev/mock-login", {
-      method: "POST",
-      body: JSON.stringify({ provider, name }),
-    });
+    const data = await request<{ token: string; user: { id: string; name: string; email: string }; isNew: boolean }>(
+      "/api/dev/mock-login",
+      {
+        method: "POST",
+        body: JSON.stringify({ provider, name }),
+      },
+    );
     await setToken(data.token);
     return data;
   },
+  me: () => request<MeResponse>("/api/me"),
   chat: (mode: Mode, message: string, history: { role: "user" | "assistant"; content: string }[] = []) =>
     request<ChatResponse>("/api/ai/chat", { method: "POST", body: JSON.stringify({ mode, message, history, lang: getAppLang() }) }),
   see: (question: string, imageBase64: string, mode: Mode) =>
@@ -84,6 +97,6 @@ export const api = {
   talk: (audioBase64: string, mode: Mode) =>
     request<TalkResponse>("/api/ai/talk", { method: "POST", body: JSON.stringify({ audioBase64, mode, lang: getAppLang() }) }),
   usage: () => request<Usage>("/api/me/usage"),
-  syncPreferences: (body: Record<string, unknown>) =>
+  syncPreferences: (body: PreferencePatch) =>
     request("/api/me/preferences", { method: "PATCH", body: JSON.stringify(body) }).catch(() => null),
 };

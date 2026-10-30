@@ -112,8 +112,9 @@ Verify everything: `pnpm typecheck` (all workspaces) and
 - **Listen for me**: polls ambient classification every 5s; critical alerts
   flash, vibrate distinctly, and stay until dismissed. *"Feel the difference"*
   lets users learn the patterns.
-- **Profile**: live token-budget meter. **Settings**: talking speed, caption
-  size, haptics, contrast, name — synced to the API.
+- **Profile**: live token-budget meter. **Settings**: language (EN/ES/PT/FR),
+  appearance (system/light/dark), talking speed, caption size, haptics,
+  contrast, name — synced to the API profile.
 
 ## Performance choices
 

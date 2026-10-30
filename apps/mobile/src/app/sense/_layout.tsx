@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StageHeader } from "../../components/ui";
 import { SenseProvider } from "../../lib/sense";
+import { useThemeColors } from "../../lib/theme";
 
 /**
  * Canonical sense group: /sense/see + /sense/listen.
@@ -14,9 +15,10 @@ import { SenseProvider } from "../../lib/sense";
  * - Screens pause resources on blur via useIsFocused (camera preview, mic loop).
  */
 export default function SenseLayout() {
+  const C = useThemeColors();
   return (
     <SenseProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#060D14" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }}>
         <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 12 }}>
           <StageHeader />
           <View style={{ flex: 1 }}>

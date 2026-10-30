@@ -1,8 +1,10 @@
 import { router } from "expo-router";
+import { Camera, Ear, Siren } from "lucide-react-native";
 import { Alert, Linking, ScrollView, Text, View } from "react-native";
-import { ACCENT, BigButton, BottomNav, Screen } from "../components/ui";
+import { ACCENT, BigButton, BottomNav, BrandMark, Screen } from "../components/ui";
 import { useStrings } from "../lib/i18n";
 import { useBuddyStore } from "../lib/store";
+import { useThemeColors } from "../lib/theme";
 
 /**
  * Welcome page (static). The canonical interactive screens are
@@ -16,7 +18,8 @@ export default function Home() {
   const user = useBuddyStore((s) => s.user);
   const lastReply = useBuddyStore((s) => s.lastReply);
   const S = useStrings();
-  const accent = ACCENT[mode];
+  const C = useThemeColors();
+  const accent = C.accentText[mode];
 
   const sos = () => {
     const phone = prefs.emergencyPhone.trim();
@@ -35,10 +38,10 @@ export default function Home() {
   };
 
   return (
-    <>
-      <Screen>
+    <View className="flex-1 bg-ink">
+      <Screen edges={["top", "left", "right"]}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
-          <Text className="text-center text-5xl">◉♪</Text>
+          <BrandMark size={48} />
           <Text className="mt-2 text-center text-3xl font-bold text-paper" accessibilityRole="header">
             {S.welcomeTitle}
             {prefs.userName ? `, ${prefs.userName}` : ""}
@@ -51,12 +54,14 @@ export default function Home() {
               label={S.homeSeeBtn}
               hint={S.homeSeeHint}
               color={ACCENT.visual}
+              icon={Camera}
               onPress={() => router.navigate("/sense/see" as never)}
             />
             <BigButton
               label={S.homeListenBtn}
               hint={S.homeListenHint}
               color={ACCENT.hearing}
+              icon={Ear}
               onPress={() => router.navigate("/sense/listen" as never)}
             />
 
@@ -71,11 +76,11 @@ export default function Home() {
               </View>
             ) : null}
 
-            <BigButton label={`🆘 ${S.sosBtn}`} hint={S.sosBtnHint} color="#FF5468" dark={false} onPress={sos} />
+            <BigButton label={S.sosBtn} hint={S.sosBtnHint} color="#FF5468" dark={false} icon={Siren} onPress={sos} />
           </View>
         </ScrollView>
       </Screen>
       <BottomNav />
-    </>
+    </View>
   );
 }

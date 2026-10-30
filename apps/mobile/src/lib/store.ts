@@ -11,7 +11,8 @@ export type Prefs = {
   hapticsEnabled: boolean;
   captionSize: "large" | "xlarge";
   highContrast: boolean;
-  language: "system" | "es" | "en";
+  language: "system" | "en" | "es" | "pt" | "fr";
+  theme: "system" | "light" | "dark";
   emergencyName: string;
   emergencyPhone: string;
 };
@@ -43,7 +44,7 @@ export const useBuddyStore = create<State>()(
       user: null,
       mode: "visual",
       seeCapture: "manual",
-      prefs: { userName: "", voiceRate: 1, voicePitch: 1, hapticsEnabled: true, captionSize: "xlarge", highContrast: true, language: "system", emergencyName: "", emergencyPhone: "" },
+      prefs: { userName: "", voiceRate: 1, voicePitch: 1, hapticsEnabled: true, captionSize: "xlarge", highContrast: true, language: "system", theme: "system", emergencyName: "", emergencyPhone: "" },
       lastReply: "",
       setMode: (mode) => set({ mode }),
       setSeeCapture: (seeCapture) => set({ seeCapture }),
@@ -57,6 +58,12 @@ export const useBuddyStore = create<State>()(
     {
       name: "sense-buddy-store",
       storage: createJSONStorage(() => AsyncStorage),
+      // Deep-merge prefs so stores persisted before a key existed (e.g.
+      // `theme`) pick up the default instead of reading `undefined`.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<State>;
+        return { ...current, ...p, prefs: { ...current.prefs, ...p.prefs } };
+      },
       partialize: (s) => ({ hasOnboarded: s.hasOnboarded, user: s.user, mode: s.mode, seeCapture: s.seeCapture, prefs: s.prefs }) as State,
     },
   ),

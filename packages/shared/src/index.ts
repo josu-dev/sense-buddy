@@ -4,6 +4,34 @@ import { z } from "zod";
 export const ModeSchema = z.enum(["visual", "hearing"]);
 export type Mode = z.infer<typeof ModeSchema>;
 
+/** UI/AI language. Device default is resolved client-side; `en` is the fallback. */
+export const LangSchema = z.enum(["en", "es", "pt", "fr"]);
+export type AppLang = z.infer<typeof LangSchema>;
+
+/** Stored language preference: explicit language or follow the device. */
+export const LangPrefSchema = z.enum(["system", "en", "es", "pt", "fr"]);
+export type LangPref = z.infer<typeof LangPrefSchema>;
+
+/** Stored appearance preference: explicit theme or follow the OS. */
+export const ThemePrefSchema = z.enum(["system", "light", "dark"]);
+export type ThemePref = z.infer<typeof ThemePrefSchema>;
+
+/** PATCH /api/me/preferences body — mirrors the server `preference` row. */
+export const PreferencePatchSchema = z.object({
+  mode: ModeSchema.optional(),
+  language: LangPrefSchema.optional(),
+  theme: ThemePrefSchema.optional(),
+  voiceRate: z.number().min(0.5).max(2).optional(),
+  voicePitch: z.number().min(0.5).max(2).optional(),
+  hapticsEnabled: z.boolean().optional(),
+  captionSize: z.enum(["large", "xlarge"]).optional(),
+  highContrast: z.boolean().optional(),
+  userName: z.string().max(80).optional(),
+  emergencyName: z.string().max(80).optional(),
+  emergencyPhone: z.string().max(40).optional(),
+});
+export type PreferencePatch = z.infer<typeof PreferencePatchSchema>;
+
 export const OrbStateSchema = z.enum(["idle", "listening", "thinking", "speaking", "alert"]);
 export type OrbState = z.infer<typeof OrbStateSchema>;
 
@@ -27,7 +55,7 @@ export const ChatRequestSchema = z.object({
   message: z.string().min(1).max(2000),
   history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(2000) })).max(12).default([]),
   /** UI language — server replies (mock + live prompts) in this language. */
-  lang: z.enum(["es", "en"]).default("en"),
+  lang: LangSchema.default("en"),
 });
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;
 
@@ -43,7 +71,7 @@ export const SeeRequestSchema = z.object({
   question: z.string().max(500).default("What is in front of me?"),
   /** Base64 JPEG, downscaled client-side to <=720px wide before upload. */
   imageBase64: z.string().min(10).max(2_800_000),
-  lang: z.enum(["es", "en"]).default("en"),
+  lang: LangSchema.default("en"),
 });
 export type SeeRequest = z.infer<typeof SeeRequestSchema>;
 
@@ -71,7 +99,7 @@ export const ListenRequestSchema = z.object({
   /** Optional base64 audio clip (live mode); mock mode ignores it. */
   audioBase64: z.string().max(4_000_000).optional(),
   userName: z.string().max(60).optional(),
-  lang: z.enum(["es", "en"]).default("en"),
+  lang: LangSchema.default("en"),
 });
 export type ListenRequest = z.infer<typeof ListenRequestSchema>;
 
@@ -91,7 +119,7 @@ export const TalkRequestSchema = z.object({
   mode: ModeSchema.default("visual"),
   /** Base64 voice clip (m4a from the app, or wav). Transcribed server-side. */
   audioBase64: z.string().min(10).max(4_000_000),
-  lang: z.enum(["es", "en"]).default("en"),
+  lang: LangSchema.default("en"),
 });
 export type TalkRequest = z.infer<typeof TalkRequestSchema>;
 
@@ -122,7 +150,7 @@ export const PRIORITY_SOUNDS: { kind: SoundKind; label: string }[] = [
 ];
 
 /** Estimated upstream token cost per route, used for quota pre-checks. */
-export const ROUTE_TOKEN_COST = { chat: 2000, see: 4500, listen: 1200, talk: 2500 } as const;
+export const ROUTE_TOKEN_COST = { chat: 2000, see: 4500, listen: 2500, talk: 2500 } as const;
 
 /** Free-tier daily budget per user (upstream tokens). Enforced server-side. */
 export const DEFAULT_DAILY_TOKEN_BUDGET = 60_000;

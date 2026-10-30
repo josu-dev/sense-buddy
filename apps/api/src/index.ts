@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { serve } from "@hono/node-server";
+import { PreferencePatchSchema } from "@sense-buddy/shared";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -44,11 +45,14 @@ app.post("/api/dev/mock-login", rateLimit("mock-login", 10), async (c) => {
   const payload = (await res.clone().json().catch(() => null)) as { user?: AuthedUser } | null;
   if (!res.ok || !token || !payload?.user) return c.json({ error: "mock_login_failed" }, 500);
 
+  const [existingPref] = await db.select().from(schema.preference).where(eq(schema.preference.userId, payload.user.id));
   await db
     .insert(schema.preference)
     .values({ userId: payload.user.id, mode: "visual", updatedAt: new Date() })
     .onConflictDoNothing();
-  return c.json({ token, user: payload.user });
+  // isNew tells the app whether to push its local (onboarding) prefs up or
+  // hydrate the saved profile down — a returning user keeps their language.
+  return c.json({ token, user: payload.user, isNew: !existingPref });
 });
 
 app.get("/api/me", requireAuth, async (c) => {
@@ -62,17 +66,9 @@ app.get("/api/me/usage", requireAuth, async (c) => {
   return c.json(await usageSummary(user.id));
 });
 
-const PreferencePatch = z.object({
-  mode: z.enum(["visual", "hearing"]).optional(),
-  voiceRate: z.number().min(0.5).max(2).optional(),
-  hapticsEnabled: z.boolean().optional(),
-  captionSize: z.enum(["large", "xlarge"]).optional(),
-  highContrast: z.boolean().optional(),
-});
-
 app.patch("/api/me/preferences", requireAuth, async (c) => {
   const user = c.get("user") as AuthedUser;
-  const body = PreferencePatch.safeParse(await c.req.json().catch(() => null));
+  const body = PreferencePatchSchema.safeParse(await c.req.json().catch(() => null));
   if (!body.success) return c.json({ error: "invalid_request" }, 400);
   const values = { userId: user.id, mode: body.data.mode ?? ("visual" as const), ...body.data, updatedAt: new Date() };
   await db
