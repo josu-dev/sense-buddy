@@ -3,7 +3,7 @@ import { GLView, type ExpoWebGLRenderingContext } from "expo-gl";
 import { useIsFocused } from "expo-router";
 import { Ear, Eye, TriangleAlert } from "lucide-react-native";
 import { memo, useEffect, useRef, useState } from "react";
-import { AppState, Pressable, Text, View } from "react-native";
+import { AppState, Pressable, Text, View, type LayoutChangeEvent } from "react-native";
 import { useThemeColors } from "../lib/theme";
 
 const STATE_LABEL: Record<OrbState, string> = {
@@ -40,6 +40,8 @@ uniform float u_time;
 uniform float u_level;
 uniform float u_energy;
 uniform float u_alert;
+uniform float u_light;
+uniform float u_aspect;
 uniform vec3 u_colDeep;
 uniform vec3 u_colMain;
 uniform vec3 u_colHi;
@@ -49,16 +51,22 @@ float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 
 void main() {
   vec2 p = v_uv * 2.0 - 1.0;
+  // Work in min-dimension units so the sphere stays round on any surface
+  // shape (square chip or full-stage bleed) with room for the bloom to fade.
+  p = p * vec2(u_aspect, 1.0) / min(u_aspect, 1.0);
   float r = length(p);
   float ang = atan(p.y, p.x);
   float t = u_time;
   vec3 abyss = u_abyss;
 
   // Abyss + one soft breathing bloom. Nothing emanates from the orb.
+  // Light mode: additive glow clips to white, so tint subtractively instead.
   vec3 col = abyss;
   float breathe = 0.5 + 0.5 * sin(t * 1.3);
-  col += u_colMain * 0.22 * exp(-r * 1.9) * (0.55 + 0.65 * u_energy + 0.10 * breathe);
-  col += u_colHi * 0.06 * exp(-r * 3.4) * (0.5 + u_energy);
+  float glow = exp(-r * 1.9) * (0.55 + 0.65 * u_energy + 0.10 * breathe);
+  col += u_colMain * 0.22 * glow * (1.0 - u_light);
+  col -= (vec3(1.0) - u_colMain) * 0.50 * glow * u_light;
+  col += u_colHi * 0.06 * exp(-r * 3.4) * (0.5 + u_energy) * (1.0 - u_light);
 
   // Deforming edge: layered angular waves, wilder with the voice level.
   float wobAmp = 0.010 + 0.030 * u_level + 0.006 * u_energy;
@@ -89,22 +97,25 @@ void main() {
 
     vec3 body = mix(u_colDeep * 0.6, u_colMain, diff * 0.7 + swirl * 0.45);
     body = mix(body, u_colHi, band * (0.30 + 0.45 * u_level) + veil * 0.20 + fres * 0.55);
-    body += u_colHi * pow(diff, 5.0) * 0.7; // glass specular, top-left
+    body += u_colHi * pow(diff, 5.0) * mix(0.7, 0.45, u_light); // glass specular, top-left
     body += u_colMain * u_level * 0.4 * (0.5 + 0.5 * sin(t * 10.0 + p.y * 9.0));
 
-    // Glassy: sheer in the center, denser toward the rim.
+    // Glassy: sheer in the center, denser toward the rim (denser in light mode).
     float alpha = mix(0.42, 0.92, fres) + u_level * 0.10;
+    alpha += (1.0 - alpha) * 0.45 * u_light;
     alpha *= 1.0 - smoothstep(sphereR - 0.01, fieldR, r);
     col = mix(col, body, clamp(alpha, 0.0, 0.96));
   }
 
   // Rim light tracing the deformed edge + sparse drifting motes.
   float rimD = abs(r - sphereR);
-  col += u_colMain * exp(-22.0 * rimD) * (0.7 + 1.0 * u_energy);
-  col += u_colHi * exp(-40.0 * rimD) * (0.25 + 0.45 * u_energy);
+  col += u_colMain * exp(-22.0 * rimD) * (0.7 + 1.0 * u_energy) * (1.0 - u_light);
+  col = mix(col, u_colMain * 0.55, exp(-22.0 * rimD) * 0.6 * u_light);
+  col += u_colHi * exp(-40.0 * rimD) * (0.25 + 0.45 * u_energy) * (1.0 - u_light);
   vec2 cell = floor(p * 30.0);
   float mote = step(0.986, hash(cell)) * smoothstep(0.55, 0.8, r) * (0.35 + 0.65 * fract(t * 0.2 + hash(cell + 7.0)));
-  col += u_colHi * mote * 0.45;
+  col += u_colHi * mote * 0.45 * (1.0 - u_light);
+  col = mix(col, u_colMain * 0.6, mote * 0.5 * u_light);
 
   // Fade the corners to the abyss so the square surface edge never shows.
   col = mix(abyss, col, 1.0 - smoothstep(0.90, 1.04, r));
@@ -122,6 +133,11 @@ function hexRgb(hex: string): [number, number, number] {
 const PALETTE: Record<Mode, { deep: string; main: string; hi: string }> = {
   visual: { deep: "#3A2404", main: "#FFB224", hi: "#FFE3A3" },
   hearing: { deep: "#043A3F", main: "#2EE6C8", hi: "#B8FFF1" },
+};
+/** Saturated palette for light backgrounds — the dark-mode pastels wash out on white. */
+const LIGHT_PALETTE: Record<Mode, { deep: string; main: string; hi: string }> = {
+  visual: { deep: "#92400E", main: "#D97706", hi: "#FBBF24" },
+  hearing: { deep: "#115E59", main: "#0D9488", hi: "#2DD4BF" },
 };
 const ALERT_MAIN = "#FF5468";
 
@@ -146,6 +162,7 @@ export const Orb = memo(function Orb({
   onPressIn,
   onPressOut,
   size = 288,
+  fill = false,
   level = 0,
   showLabel = true,
   accessibilityLabel,
@@ -157,22 +174,27 @@ export const Orb = memo(function Orb({
   onPressIn?: () => void;
   onPressOut?: () => void;
   size?: number;
+  /** Fill the parent stage edge-to-edge (GL sized to it) instead of a fixed square. */
+  fill?: boolean;
   level?: number;
   showLabel?: boolean;
   accessibilityLabel?: string;
 }) {
   const isFocused = useIsFocused();
   const [glFailed, setGlFailed] = useState(false);
+  const [measured, setMeasured] = useState({ w: 0, h: 0 });
   const lastTap = useRef(0);
   const C = useThemeColors();
 
   // Latest inputs for the GL loop — refs so frames never re-render React.
-  const live = useRef({ state, mode, level, focused: true, appActive: true, abyss: C.orbAbyss });
+  const live = useRef({ state, mode, level, focused: true, appActive: true, abyss: C.orbAbyss, light: C.isDark ? 0 : 1, aspect: 1 });
   live.current.state = state;
   live.current.mode = mode;
   live.current.level = level;
   live.current.focused = isFocused;
   live.current.abyss = C.orbAbyss;
+  live.current.light = C.isDark ? 0 : 1;
+  live.current.aspect = fill && measured.w > 0 && measured.h > 0 ? measured.w / measured.h : 1;
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (s) => {
@@ -216,6 +238,8 @@ export const Orb = memo(function Orb({
       const uLevel = u("u_level");
       const uEnergy = u("u_energy");
       const uAlert = u("u_alert");
+      const uLight = u("u_light");
+      const uAspect = u("u_aspect");
       const uDeep = u("u_colDeep");
       const uMain = u("u_colMain");
       const uHi = u("u_colHi");
@@ -256,7 +280,7 @@ export const Orb = memo(function Orb({
         }
         levelRef.current += (Math.max(0, Math.min(1, target)) - levelRef.current) * 0.35;
 
-        const pal = PALETTE[cur.mode];
+        const pal = (cur.light > 0.5 ? LIGHT_PALETTE : PALETTE)[cur.mode];
         const main = hexRgb(st === "alert" ? ALERT_MAIN : pal.main);
         const hi = hexRgb(pal.hi);
         const deep = hexRgb(pal.deep);
@@ -265,6 +289,8 @@ export const Orb = memo(function Orb({
         gl.uniform1f(uLevel, levelRef.current);
         gl.uniform1f(uEnergy, st === "idle" ? 0.45 : st === "thinking" ? 0.7 : 1);
         gl.uniform1f(uAlert, st === "alert" ? 1 : 0);
+        gl.uniform1f(uLight, cur.light);
+        gl.uniform1f(uAspect, cur.aspect);
         gl.uniform3f(uDeep, deep[0], deep[1], deep[2]);
         gl.uniform3f(uMain, main[0], main[1], main[2]);
         gl.uniform3f(uHi, hi[0], hi[1], hi[2]);
@@ -282,7 +308,20 @@ export const Orb = memo(function Orb({
   };
 
   const accent = state === "alert" ? ALERT_MAIN : PALETTE[mode].main;
-  const glSize = Math.round(size * GL_SCALE);
+  // Fill mode: GL surface matches the measured stage (remounts on rotate);
+  // fixed mode: the classic `size` square. Either way GL renders at 75% and
+  // scales up for the same glow at fewer fragment invocations.
+  const boxW = fill ? measured.w : size;
+  const boxH = fill ? measured.h : size;
+  const ready = !fill || (boxW > 0 && boxH > 0);
+  const glW = Math.max(1, Math.round(boxW * GL_SCALE));
+  const glH = Math.max(1, Math.round(boxH * GL_SCALE));
+  const disc = Math.min(boxW || size, boxH || size);
+
+  const onBoxLayout = (e: LayoutChangeEvent) => {
+    const { width: w, height: h } = e.nativeEvent.layout;
+    setMeasured((m) => (Math.abs(m.w - w) < 1 && Math.abs(m.h - h) < 1 ? m : { w, h }));
+  };
 
   const handlePressIn = () => {
     onPressIn?.();
@@ -305,31 +344,46 @@ export const Orb = memo(function Orb({
   };
 
   return (
-    <View className="items-center" accessible accessibilityLabel={accessibilityLabel ?? `Sense Buddy orb. ${STATE_LABEL[state]}`} accessibilityRole="button">
+    <View
+      className={fill ? undefined : "items-center"}
+      style={fill ? { flex: 1 } : undefined}
+      accessible
+      accessibilityLabel={accessibilityLabel ?? `Sense Buddy orb. ${STATE_LABEL[state]}`}
+      accessibilityRole="button"
+    >
       <Pressable
         onPressIn={handlePressIn}
         onPressOut={onPressOut}
         onPress={handlePress}
         accessibilityLabel={accessibilityLabel ?? "Buddy orb. Tap to talk, double tap to sense your surroundings."}
         className="items-center justify-center"
+        style={fill ? { flex: 1 } : undefined}
       >
-        <View style={{ width: size, height: size, overflow: "visible" }} className="items-center justify-center">
-          {glFailed ? (
+        <View
+          // alignSelf stretch: the centered Pressable would otherwise size
+          // this box to its content, feeding the measurement back into itself
+          // until the surface collapses to a sliver.
+          style={fill ? { flex: 1, alignSelf: "stretch", overflow: "visible" } : { width: size, height: size, overflow: "visible" }}
+          className="items-center justify-center"
+          onLayout={fill ? onBoxLayout : undefined}
+        >
+          {!ready ? null : glFailed ? (
             // Fallback (no GL): layered translucent currents on the UI thread.
-            <View style={{ width: size * 0.78, height: size * 0.78, borderRadius: size / 2, backgroundColor: C.orbFallback, borderWidth: 2, borderColor: accent, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-              <View style={{ position: "absolute", width: size * 0.6, height: size * 0.4, borderRadius: size / 2, backgroundColor: accent, opacity: 0.28, transform: [{ rotate: "-18deg" }, { translateY: -size * 0.14 }] }} />
-              <View style={{ position: "absolute", width: size * 0.65, height: size * 0.36, borderRadius: size / 2, backgroundColor: accent, opacity: 0.18, transform: [{ rotate: "14deg" }, { translateY: size * 0.16 }] }} />
+            <View style={{ width: disc * 0.78, height: disc * 0.78, borderRadius: disc / 2, backgroundColor: C.orbFallback, borderWidth: 2, borderColor: accent, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+              <View style={{ position: "absolute", width: disc * 0.6, height: disc * 0.4, borderRadius: disc / 2, backgroundColor: accent, opacity: C.isDark ? 0.28 : 0.45, transform: [{ rotate: "-18deg" }, { translateY: -disc * 0.14 }] }} />
+              <View style={{ position: "absolute", width: disc * 0.65, height: disc * 0.36, borderRadius: disc / 2, backgroundColor: accent, opacity: C.isDark ? 0.18 : 0.3, transform: [{ rotate: "14deg" }, { translateY: disc * 0.16 }] }} />
               {state === "alert" ? (
-                <TriangleAlert size={size * 0.18} strokeWidth={2.25} color={accent} />
+                <TriangleAlert size={disc * 0.18} strokeWidth={2.25} color={accent} />
               ) : mode === "visual" ? (
-                <Eye size={size * 0.18} strokeWidth={2} color={accent} />
+                <Eye size={disc * 0.18} strokeWidth={2} color={accent} />
               ) : (
-                <Ear size={size * 0.18} strokeWidth={2} color={accent} />
+                <Ear size={disc * 0.18} strokeWidth={2} color={accent} />
               )}
             </View>
           ) : (
             <GLView
-              style={{ width: glSize, height: glSize, transform: [{ scale: 1 / GL_SCALE }], backgroundColor: C.ink }}
+              key={fill ? `${Math.round(boxW)}x${Math.round(boxH)}` : "square"}
+              style={{ width: glW, height: glH, transform: [{ scale: 1 / GL_SCALE }], backgroundColor: C.ink }}
               msaaSamples={0}
               onContextCreate={onContextCreate}
             />

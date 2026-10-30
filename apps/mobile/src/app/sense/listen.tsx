@@ -1,7 +1,7 @@
 import type { ListenEvent, OrbState } from "@sense-buddy/shared";
 import { router, useIsFocused } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 import { Orb } from "../../components/Orb";
 import { ACCENT, WaveBars } from "../../components/ui";
@@ -42,9 +42,6 @@ export default function Listen() {
   useEffect(() => {
     captureModeRef.current = captureMode;
   }, [captureMode]);
-  const { width } = useWindowDimensions();
-  const orbSize = Math.min(width - 16, 400);
-
   useEffect(() => {
     if (alert?.priority === "critical") {
       // Strobe blanco a pantalla completa: para quien no siente la vibración.
@@ -181,12 +178,12 @@ export default function Listen() {
   return (
     <>
       <View className="flex-1 pb-2">
-          <View className="flex-1 items-center justify-center" style={{ overflow: "visible" }}>
+          <View className="flex-1" style={{ overflow: "visible" }}>
             <Orb
               state={orbState}
               mode="hearing"
               level={level}
-              size={orbSize}
+              fill
               showLabel={false}
               onPressIn={captureMode === "manual" ? () => void manualStart() : undefined}
               onPressOut={captureMode === "manual" ? () => void manualEnd() : undefined}

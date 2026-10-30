@@ -50,7 +50,24 @@
       [
         "expo-localization",
         {
-          "supportedLocales": ["en", "es", "pt", "fr"]
+          "supportedLocales": [
+            "en",
+            "es",
+            "pt",
+            "fr"
+          ]
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#060D14",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#060D14"
+          }
         }
       ]
     ]

@@ -4,7 +4,9 @@ import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { router, useIsFocused } from "expo-router";
 import { Camera } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, Text, View, useWindowDimensions, type GestureResponderEvent, type PanResponderGestureState } from "react-native";
+import { Pressable, Text, View, useWindowDimensions } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { Orb } from "../../components/Orb";
 import { ACCENT } from "../../components/ui";
 import { api, isUnauthorized } from "../../lib/api";
@@ -31,8 +33,6 @@ function framesMatch(a: string, b: string): boolean {
   }
   return same / maxLen >= SAME_FRAME_THRESHOLD;
 }
-
-const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 
 export default function See() {
   const captureMode = useBuddyStore((s) => s.seeCapture);
@@ -62,29 +62,43 @@ export default function See() {
   const cameraRef = useRef<CameraView>(null);
 
   const { width } = useWindowDimensions();
-  const orbSize = Math.min(width - 16, 400);
   const pipWidth = Math.round((width - 40) * 0.47);
   const pipHeight = Math.round((pipWidth * 3) / 4);
 
-  // Draggable preview position. Plain responder props below claim touches
-  // starting on the preview; a release without movement counts as a tap.
-  const [dragPos] = useState(() => new Animated.ValueXY({ x: 0, y: 0 }));
-  const dragNums = useRef({
-    offset: { x: 0, y: 0 },
-    start: { x: 0, y: 0 },
-    stage: { w: 0, h: 0 },
-    size: { w: 0, h: 0 },
-    moved: false,
-  });
-  // Re-clamp after rotation / resize so the preview can't end up off-stage.
+  // Draggable preview position — a native Pan gesture driving Reanimated
+  // shared values (UI thread, no JS responder negotiation to break). Taps do
+  // nothing by design: capture is orb-only. Bounds re-sync on every stage
+  // layout (mount + rotation/resize) so the preview stays on-stage.
+  const offX = useSharedValue(0);
+  const offY = useSharedValue(0);
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+  const maxX = useSharedValue(0);
+  const maxY = useSharedValue(0);
+  const [stage, setStage] = useState({ w: 0, h: 0 });
+  const pan = Gesture.Pan()
+    .onStart(() => {
+      startX.value = offX.value;
+      startY.value = offY.value;
+    })
+    .onUpdate((e) => {
+      offX.value = Math.min(Math.max(startX.value + e.translationX, 0), maxX.value);
+      offY.value = Math.min(Math.max(startY.value + e.translationY, 0), maxY.value);
+    });
+  const dragStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: offX.value }, { translateY: offY.value }],
+  }));
+  // Re-clamp after mount / rotation / resize so the preview stays on-stage.
   useEffect(() => {
-    const d = dragNums.current;
-    d.size = { w: pipWidth, h: pipHeight };
-    const cx = clamp(d.offset.x, 0, Math.max(0, d.stage.w - pipWidth));
-    const cy = clamp(d.offset.y, 0, Math.max(0, d.stage.h - pipHeight));
-    d.offset = { x: cx, y: cy };
-    dragPos.setValue({ x: cx, y: cy });
-  }, [pipWidth, pipHeight, dragPos]);
+    const mx = Math.max(0, stage.w - pipWidth);
+    const my = Math.max(0, stage.h - pipHeight);
+    maxX.value = mx;
+    maxY.value = my;
+    // eslint-disable-next-line react-hooks/immutability -- shared values are mutable by design; the rule doesn't model Reanimated worklet state.
+    offX.value = Math.min(offX.value, mx);
+    // eslint-disable-next-line react-hooks/immutability -- shared values are mutable by design; the rule doesn't model Reanimated worklet state.
+    offY.value = Math.min(offY.value, my);
+  }, [stage, pipWidth, pipHeight, maxX, maxY, offX, offY]);
 
   const analyze = async (imageBase64: string) => {
     setBusy(true);
@@ -177,14 +191,7 @@ export default function See() {
     void capture();
   };
 
-  const tapPreview = () => {
-    if (!permission?.granted) {
-      void requestPermission();
-      return;
-    }
-    void capture();
-  };
-  const pipA11y = !permission?.granted ? S.seeAllowCamShort : busy ? S.viewLookingOrb : S.viewTapOrb;
+  const pipA11y = `${S.viewPreview}. ${S.viewPreviewHint}`;
 
   // sense/_layout owns SafeArea + StageHeader (persistent, no remount flash).
   return (
@@ -192,56 +199,28 @@ export default function See() {
         {/* Stage: orb dead-center, draggable preview floating above it. */}
         <View
           className="flex-1"
-          onLayout={(e) => {
-            dragNums.current.stage = { w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height };
-          }}
+          onLayout={(e) => setStage({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
         >
           <View
             pointerEvents="box-none"
-            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", overflow: "visible", zIndex: 1 }}
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, overflow: "visible", zIndex: 1 }}
           >
             <Orb
               state={busy ? "thinking" : orbState}
               mode="visual"
-              size={orbSize}
+              fill
               showLabel={false}
               onTap={orbTap}
               accessibilityLabel={busy ? S.viewLookingOrb : S.viewTapOrb}
             />
           </View>
 
-          <Animated.View
-            accessible
-            accessibilityRole="button"
-            accessibilityLabel={pipA11y}
-            accessibilityActions={[{ name: "activate", label: pipA11y }]}
-            onAccessibilityAction={tapPreview}
-            onAccessibilityTap={tapPreview}
-            onStartShouldSetResponder={() => true}
-            onResponderGrant={() => {
-              const d = dragNums.current;
-              d.start = { ...d.offset };
-              d.moved = false;
-            }}
-            onResponderMove={(_e: GestureResponderEvent, g?: PanResponderGestureState) => {
-              const dx = g?.dx ?? 0;
-              const dy = g?.dy ?? 0;
-              if (Math.hypot(dx, dy) < 6 && !dragNums.current.moved) return;
-              const d = dragNums.current;
-              d.moved = true;
-              const nx = clamp(d.start.x + dx, 0, Math.max(0, d.stage.w - d.size.w));
-              const ny = clamp(d.start.y + dy, 0, Math.max(0, d.stage.h - d.size.h));
-              d.offset = { x: nx, y: ny };
-              dragPos.setValue({ x: nx, y: ny });
-            }}
-            onResponderRelease={() => {
-              if (!dragNums.current.moved) tapPreview();
-            }}
-            onResponderTerminate={() => {
-              dragNums.current.moved = false;
-            }}
-            style={{ position: "absolute", top: 0, left: 0, transform: dragPos.getTranslateTransform(), zIndex: 2 }}
-          >
+          <GestureDetector gesture={pan}>
+            <Animated.View
+              accessible
+              accessibilityLabel={pipA11y}
+              style={[{ position: "absolute", top: 0, left: 0, zIndex: 2 }, dragStyle]}
+            >
             {permission?.granted && isFocused ? (
               <View
                 style={{
@@ -292,6 +271,7 @@ export default function See() {
               </View>
             )}
             </Animated.View>
+          </GestureDetector>
         </View>
 
         {/* Manual / Live capture toggle (reference bottom pill). */}

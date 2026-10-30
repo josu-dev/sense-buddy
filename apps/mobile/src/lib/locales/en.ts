@@ -11,6 +11,7 @@ export const en = {
   back: "Back",
   welcomeTitle: "Welcome to Sense Buddy",
   welcomeSub: "Your buddy is ready. Jump into your senses, or check who's asking for you.",
+  splashTag: "See more. Hear more.",
   modeCantSee: "I can't see",
   modeCantHear: "I can't hear",
   modeSeeSub: "Buddy talks & sees",
@@ -23,6 +24,7 @@ export const en = {
   liveOn: "Listening...",
   liveOff: "Paused",
   viewPreview: "Camera preview",
+  viewPreviewHint: "Drag to move",
   viewTapOrb: "Tap the orb to look",
   viewLookingOrb: "Looking…",
   // onboarding
