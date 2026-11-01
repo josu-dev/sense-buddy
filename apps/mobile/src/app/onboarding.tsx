@@ -1,9 +1,9 @@
 import type { Mode } from "@sense-buddy/shared";
 import { router } from "expo-router";
-import { Ear, Eye, type LucideIcon } from "lucide-react-native";
+import { Ear, Eye, Megaphone, type LucideIcon } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { BackHandler, Pressable, ScrollView, Text, View } from "react-native";
-import { BackButton, BigButton, BrandMark, Screen } from "../components/ui";
+import { ACCENT, BackButton, BigButton, BrandMark, Screen } from "../components/ui";
 import { useStrings } from "../lib/i18n";
 import { useBuddyStore } from "../lib/store";
 import { useThemeColors } from "../lib/theme";
@@ -36,14 +36,19 @@ export default function Onboarding() {
   }, [step]);
 
   const MODE_CARDS: { mode: Mode; Icon: LucideIcon; title: string; body: string; color: string }[] = [
-    { mode: "visual", Icon: Eye, title: S.obVisualTitle, body: S.obVisualBody, color: "#FFB224" },
-    { mode: "hearing", Icon: Ear, title: S.obHearingTitle, body: S.obHearingBody, color: "#3EE6FF" },
+    { mode: "visual", Icon: Eye, title: S.obVisualTitle, body: S.obVisualBody, color: ACCENT.visual },
+    { mode: "hearing", Icon: Ear, title: S.obHearingTitle, body: S.obHearingBody, color: ACCENT.hearing },
+    { mode: "speak", Icon: Megaphone, title: S.obSpeakTitle, body: S.obSpeakBody, color: ACCENT.speak },
   ];
 
   const pickMode = (m: Mode) => {
     setMode(m);
+    // Demo the buddy's voice for the modes that talk; hearing mode stays
+    // silent because its users can't hear it.
     if (m === "visual") {
       speak(S.obSpeakVisual, prefs);
+    } else if (m === "speak") {
+      speak(S.obSpeakSay, prefs);
     }
   };
 
@@ -104,7 +109,7 @@ export default function Onboarding() {
             <Text className="text-base text-muted">{S.obBoth}</Text>
             <BigButton
               label={S.obContinue}
-              color={mode === "visual" ? "#FFB224" : "#3EE6FF"}
+              color={ACCENT[mode]}
               onPress={() => {
                 completeOnboarding(mode);
                 router.replace("/login");

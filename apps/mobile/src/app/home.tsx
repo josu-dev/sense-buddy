@@ -8,7 +8,7 @@ import { useThemeColors } from "../lib/theme";
 
 /**
  * Welcome page (static). The canonical interactive screens are
- * /sense/see + /sense/listen — all chat/orb/voice logic moved there.
+ * /sense/see + /sense/listen + /sense/say — all chat/orb/voice logic moved there.
  * This page never subscribes to transient sense state, so arriving here
  * from sense/ never flashes stale orb/chat content.
  */

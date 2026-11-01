@@ -48,9 +48,11 @@ export default function See() {
   const question = S.seeQ1;
 
   // Tabs keep this mounted in the background: never narrate over /listen.
+  // With sticky audio the root SpeechNavGuard decides instead (sense-tab
+  // hops keep playing, leaving the sense group still cuts).
   useEffect(() => {
-    if (!isFocused) stopSpeaking();
-  }, [isFocused]);
+    if (!isFocused && !prefs.stickySenseAudio) stopSpeaking();
+  }, [isFocused, prefs.stickySenseAudio]);
 
   const [permission, requestPermission] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
@@ -278,7 +280,7 @@ export default function See() {
         <View className="items-center">
           {noSession ? (
             <Pressable
-              onPress={() => router.push("/login")}
+              onPress={() => router.replace("/login")}
               accessibilityRole="button"
               accessibilityLabel={S.seeSessionBtn}
               className="min-h-[60px] w-[300px] max-w-full items-center justify-center rounded-full px-4"

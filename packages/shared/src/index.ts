@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /** The first preference asked in onboarding. Drives the whole UX. */
-export const ModeSchema = z.enum(["visual", "hearing"]);
+export const ModeSchema = z.enum(["visual", "hearing", "speak"]);
 export type Mode = z.infer<typeof ModeSchema>;
 
 /** UI/AI language. Device default is resolved client-side; `en` is the fallback. */
@@ -24,6 +24,7 @@ export const PreferencePatchSchema = z.object({
   voiceRate: z.number().min(0.5).max(2).optional(),
   voicePitch: z.number().min(0.5).max(2).optional(),
   hapticsEnabled: z.boolean().optional(),
+  stickySenseAudio: z.boolean().optional(),
   captionSize: z.enum(["large", "xlarge"]).optional(),
   highContrast: z.boolean().optional(),
   userName: z.string().max(80).optional(),
@@ -172,4 +173,5 @@ export const DEFAULT_DAILY_TOKEN_BUDGET = 60_000;
 export const QUICK_PHRASES: Record<Mode, string[]> = {
   visual: ["What is in front of me?", "Is there a door nearby?", "Read any text you can see", "Is it safe to cross?"],
   hearing: ["Caption what people are saying", "Listen for the doorbell", "Tell me if someone calls my name", "Any alarms or sirens?"],
+  speak: ["Hello, how are you?", "Thank you very much.", "I need help, please.", "Where is the bathroom?"],
 };

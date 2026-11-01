@@ -25,8 +25,8 @@ export function useSense(): SenseValue {
 }
 
 /**
- * Shared state for sense/see + sense/listen. Mounted once in sense/_layout,
- * persists across tab switches (Tabs keeps the layout mounted).
+ * Shared state for sense/see + sense/listen + sense/say. Mounted once in
+ * sense/_layout, persists across tab switches (Tabs keeps the layout mounted).
  *
  * - `tab` comes from the route, so screens never re-render mid-transition
  *   because a global flipped before navigation committed (the old flash).
@@ -42,9 +42,9 @@ export function SenseProvider({ children }: { children: ReactNode }) {
   const [listenCapture, setListenCapture] = useState<SenseCapture>("manual");
 
   useEffect(() => {
-    // Say is neutral — shared by both modes, so it never flips the preference.
-    if (tab === "say") return;
-    const want = tab === "see" ? "visual" : "hearing";
+    // Each tab is its mode's canonical home, so visiting one adopts it as
+    // the preference (picked in onboarding, mirrored to the server profile).
+    const want = tab === "see" ? "visual" : tab === "listen" ? "hearing" : "speak";
     if (mode !== want) setMode(want);
   }, [tab, mode, setMode]);
 

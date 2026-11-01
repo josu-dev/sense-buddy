@@ -334,18 +334,22 @@ const CHAT_MOCK: Record<AppLang, Record<ChatRequest["mode"], (message: string) =
   en: {
     visual: (m) => `I hear you. You said: “${m}”. Tap the big See For Me button or double-tap my orb and I will look through your camera and describe exactly where things are, in steps and directions.`,
     hearing: (m) => `Got it: “${m}”. I will keep captions large on screen and alert you with vibrations for doorbells, sirens, alarms, or someone calling your name.`,
+    speak: (m) => `Got it: “${m}”. Type what you want to say in the Say tab and I will speak it out loud for you, in any language.`,
   },
   es: {
     visual: (m) => `Te escucho. Dijiste: “${m}”. Tocá el botón grande Ver Por Mí o tocame dos veces y voy a mirar por la cámara y describirte dónde está cada cosa, en pasos y direcciones.`,
     hearing: (m) => `Entendido: “${m}”. Voy a mantener los subtítulos grandes y avisarte con vibraciones por timbres, sirenas, alarmas o si dicen tu nombre.`,
+    speak: (m) => `Entendido: “${m}”. Escribí lo que quieras decir en la pestaña Decir y lo digo en voz alta por vos, en cualquier idioma.`,
   },
   pt: {
     visual: (m) => `Te ouço. Você disse: “${m}”. Toque no botão grande Ver Por Mim ou toque duas vezes no meu orbe e vou olhar pela sua câmera e descrever exatamente onde está cada coisa, em passos e direções.`,
     hearing: (m) => `Entendi: “${m}”. Vou manter as legendas grandes na tela e avisar com vibrações sobre campainhas, sirenes, alarmes ou alguém dizendo seu nome.`,
+    speak: (m) => `Entendi: “${m}”. Digite o que quiser dizer na aba Falar e eu digo em voz alta por você, em qualquer idioma.`,
   },
   fr: {
     visual: (m) => `Je vous entends. Vous avez dit : « ${m} ». Touchez le grand bouton Voir Pour Moi ou touchez mon orbe deux fois et je regarderai à travers votre caméra pour décrire exactement où se trouve chaque chose, en pas et en directions.`,
     hearing: (m) => `Compris : « ${m} ». Je garderai de grands sous-titres à l'écran et je vous préviendrai par vibrations pour les sonnettes, sirènes, alarmes, ou si quelqu'un prononce votre nom.`,
+    speak: (m) => `Compris : « ${m} ». Écrivez ce que vous voulez dire dans l'onglet Dire et je le dirai à voix haute pour vous, dans n'importe quelle langue.`,
   },
 };
 
@@ -357,7 +361,9 @@ export async function chatWithBuddy(req: ChatRequest): Promise<ProviderResult<{ 
   const system =
     req.mode === "visual"
       ? `${langLine(req.lang)}You are Sense Buddy, a warm voice assistant for a blind user. Answer in short spoken sentences. Give spatial guidance in steps and clock/left-right directions. Never say 'as an AI'.`
-      : `${langLine(req.lang)}You are Sense Buddy, an assistant for a deaf user. Answer as short, clear captions. Flag important environmental sounds. Keep each line under 90 characters when possible.`;
+      : req.mode === "hearing"
+        ? `${langLine(req.lang)}You are Sense Buddy, an assistant for a deaf user. Answer as short, clear captions. Flag important environmental sounds. Keep each line under 90 characters when possible.`
+        : `${langLine(req.lang)}You are Sense Buddy, a speaking assistant for a user who cannot speak well. Answer in short sentences that are easy to speak out loud. Offer to say things for them in any language. Never say 'as an AI'.`;
   const result = await llamaChat(
     [{ role: "system", content: system }, ...req.history, { role: "user", content: req.message }],
     false,
@@ -861,11 +867,11 @@ export async function talkFromVoice(req: TalkRequest): Promise<ProviderResult<Ta
   const transcript = heard?.transcript ?? "";
   if (!transcript) {
     const reply = TALK_FALLBACK[req.lang] ?? TALK_FALLBACK.en;
-    return { data: { transcript, reply, shouldSpeak: req.mode === "visual" }, inputTokens: 300, outputTokens: estimateTokens(reply) };
+    return { data: { transcript, reply, shouldSpeak: req.mode !== "hearing" }, inputTokens: 300, outputTokens: estimateTokens(reply) };
   }
   const chat = await chatWithBuddy({ mode: req.mode, message: transcript, history: [], lang: req.lang });
   return {
-    data: { transcript, reply: chat.data.reply, shouldSpeak: req.mode === "visual" },
+    data: { transcript, reply: chat.data.reply, shouldSpeak: req.mode !== "hearing" },
     inputTokens: chat.inputTokens + 300,
     outputTokens: chat.outputTokens + estimateTokens(transcript),
   };

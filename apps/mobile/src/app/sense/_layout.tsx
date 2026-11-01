@@ -6,7 +6,7 @@ import { SenseProvider } from "../../lib/sense";
 import { useThemeColors } from "../../lib/theme";
 
 /**
- * Canonical sense group: /sense/see + /sense/listen.
+ * Canonical sense group: /sense/see + /sense/listen + /sense/say.
  *
  * - Tabs (native, no animation) instead of Stack+replace: switching tabs does
  *   NOT unmount the layout, so StageHeader/ModeNotch never remount (no flash)

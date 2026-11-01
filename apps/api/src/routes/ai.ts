@@ -36,7 +36,7 @@ aiRoutes.post("/chat", rateLimit("ai-chat", 30), async (c) => {
     await recordUsage(user.id, "chat", result.inputTokens, result.outputTokens);
     const usage = await usageSummary(user.id);
     c.header("X-Token-Remaining", String(usage.remaining));
-    return c.json(ChatResponseSchema.parse({ reply: result.data.reply, shouldSpeak: body.data.mode === "visual" }));
+    return c.json(ChatResponseSchema.parse({ reply: result.data.reply, shouldSpeak: body.data.mode !== "hearing" }));
   } catch (err) {
     return c.json({ error: "ai_unavailable", message: err instanceof Error ? err.message : "unknown" }, 502);
   }
@@ -101,7 +101,7 @@ aiRoutes.post("/talk", rateLimit("ai-talk", 20), async (c) => {
     await recordUsage(user.id, "talk", result.inputTokens, result.outputTokens);
     const usage = await usageSummary(user.id);
     c.header("X-Token-Remaining", String(usage.remaining));
-    return c.json(TalkResponseSchema.parse({ ...result.data, shouldSpeak: body.data.mode === "visual" }));
+    return c.json(TalkResponseSchema.parse({ ...result.data, shouldSpeak: body.data.mode !== "hearing" }));
   } catch (err) {
     return c.json({ error: "ai_unavailable", message: err instanceof Error ? err.message : "unknown" }, 502);
   }

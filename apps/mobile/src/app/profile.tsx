@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { Ear, Eye, Settings, Trash2 } from "lucide-react-native";
+import { Ear, Eye, Megaphone, Settings, Trash2 } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { ACCENT, BigButton, BottomNav, ConfirmDialog, Header, Screen } from "../components/ui";
@@ -40,8 +40,8 @@ export default function Profile() {
     }
     await setToken(null);
     queryClient.clear();
-    resetAll();
-    router.replace("/onboarding");
+    resetAll(); // trips Stack.Protected: protected history is purged…
+    router.replace("/onboarding"); // …and a deleted account restarts at onboarding, not login.
   };
 
   return (
@@ -57,11 +57,13 @@ export default function Profile() {
                 <Text className="text-lg text-paper">{S.profileMainMode}:</Text>
                 {mode === "visual" ? (
                   <Eye size={20} strokeWidth={2.25} color={C.accentText[mode]} />
-                ) : (
+                ) : mode === "hearing" ? (
                   <Ear size={20} strokeWidth={2.25} color={C.accentText[mode]} />
+                ) : (
+                  <Megaphone size={20} strokeWidth={2.25} color={C.accentText[mode]} />
                 )}
                 <Text className="text-lg" style={{ color: C.accentText[mode] }}>
-                  {mode === "visual" ? S.modeCantSee : S.modeCantHear}
+                  {mode === "visual" ? S.modeCantSee : mode === "hearing" ? S.modeCantHear : S.modeCantSpeak}
                 </Text>
               </View>
             </View>
@@ -98,7 +100,10 @@ export default function Profile() {
                 // which has none), then clear the device.
                 if (user?.id !== "offline-demo") await api.signOutServer().catch(() => null);
                 await setToken(null);
+                queryClient.clear();
                 signOut();
+                // signOut() trips Stack.Protected: protected history is purged,
+                // this replace just declares the landing target.
                 router.replace("/login");
               }}
             />

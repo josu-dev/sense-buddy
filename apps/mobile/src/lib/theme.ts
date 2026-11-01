@@ -79,7 +79,7 @@ export type ThemeColors = {
   paper: string;
   muted: string;
   /** Mode accents readable as *text* on surfaces (fills stay vivid). */
-  accentText: { visual: string; hearing: string };
+  accentText: { visual: string; hearing: string; speak: string };
   /** Text on vivid accent fills — same in both themes. */
   onAccent: string;
   onAccentSub: string;
@@ -114,7 +114,7 @@ const DARK_COLORS: ThemeColors = {
   line: "#1E3448",
   paper: "#F4F9FF",
   muted: "#9FB4C7",
-  accentText: { visual: "#FFB224", hearing: "#3EE6FF" },
+  accentText: { visual: "#FFB224", hearing: "#3EE6FF", speak: "#A78BFA" },
   onAccent: "#060D14",
   onAccentSub: "#243447",
   onAmber: "#2A1A00",
@@ -141,7 +141,7 @@ const LIGHT_COLORS: ThemeColors = {
   line: "#C3D3E3",
   paper: "#0A1A2B",
   muted: "#4C6A84",
-  accentText: { visual: "#9A6200", hearing: "#0B7E99" },
+  accentText: { visual: "#9A6200", hearing: "#0B7E99", speak: "#6D28D9" },
   onAccent: "#060D14",
   onAccentSub: "#243447",
   onAmber: "#2A1A00",

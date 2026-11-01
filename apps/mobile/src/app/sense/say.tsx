@@ -28,8 +28,8 @@ const LANG_FLAG: Record<AppLang, string> = { en: "🇺🇸", es: "🇪🇸", pt:
  * preview card above the input (the source text stays in place), and says
  * the translation out loud with a matching voice. Offline/quota/session
  * failures fall back to reading the original text as-is, so the user is
- * never left silent. The tab is mode-neutral: it never flips the user's
- * visual/hearing preference (see SenseProvider).
+ * never left silent. This is the speak mode's canonical tab (see
+ * SenseProvider): visiting it adopts `speak` as the user preference.
  */
 export default function Say() {
   const isFocused = useIsFocused();
@@ -59,14 +59,18 @@ export default function Say() {
   }, [isFocused]);
 
   // Tabs keep this mounted in the background: never speak over see/listen.
+  // With sticky audio the root SpeechNavGuard decides instead (sense-tab
+  // hops keep playing; a pending translate still dies via focusedRef, and
+  // onStopped resets the orb when the guard cuts speech outside sense).
   useEffect(() => {
     if (!isFocused) {
+      if (prefs.stickySenseAudio) return;
       seqRef.current += 1;
       stopSpeaking();
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOrbState("idle");
     }
-  }, [isFocused]);
+  }, [isFocused, prefs.stickySenseAudio]);
 
   // Never leave an utterance playing behind another screen.
   useEffect(() => () => stopSpeaking(), []);

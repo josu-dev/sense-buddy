@@ -52,12 +52,13 @@ export const verification = sqliteTable("verification", {
 // --- Sense Buddy tables ---
 export const preference = sqliteTable("preference", {
   userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
-  mode: text("mode", { enum: ["visual", "hearing"] }).notNull().default("visual"),
+  mode: text("mode", { enum: ["visual", "hearing", "speak"] }).notNull().default("visual"),
   language: text("language", { enum: ["system", "en", "es", "pt", "fr"] }).notNull().default("system"),
   theme: text("theme", { enum: ["system", "light", "dark"] }).notNull().default("system"),
   voiceRate: real("voice_rate").notNull().default(1),
   voicePitch: real("voice_pitch").notNull().default(1),
   hapticsEnabled: integer("haptics_enabled", { mode: "boolean" }).notNull().default(true),
+  stickySenseAudio: integer("sticky_sense_audio", { mode: "boolean" }).notNull().default(false),
   captionSize: text("caption_size", { enum: ["large", "xlarge"] }).notNull().default("xlarge"),
   highContrast: integer("high_contrast", { mode: "boolean" }).notNull().default(true),
   userName: text("user_name").notNull().default(""),

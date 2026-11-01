@@ -28,7 +28,8 @@ export default function Login() {
 
   const goSense = () => {
     // Land on the canonical sense tab right after auth.
-    const target = (useBuddyStore.getState().mode === "visual" ? "/sense/see" : "/sense/listen") as never;
+    const m = useBuddyStore.getState().mode;
+    const target = (m === "visual" ? "/sense/see" : m === "hearing" ? "/sense/listen" : "/sense/say") as never;
     router.replace(target);
   };
 

@@ -9,6 +9,8 @@ export type Prefs = {
   voiceRate: number;
   voicePitch: number;
   hapticsEnabled: boolean;
+  /** Keep TTS playing when hopping between sense tabs (default: any navigation stops it). */
+  stickySenseAudio: boolean;
   captionSize: "large" | "xlarge";
   highContrast: boolean;
   language: "system" | "en" | "es" | "pt" | "fr";
@@ -39,7 +41,7 @@ type State = {
   setLastReply: (s: string) => void;
 };
 
-const DEFAULT_PREFS: Prefs = { userName: "", voiceRate: 1, voicePitch: 1, hapticsEnabled: true, captionSize: "xlarge", highContrast: true, language: "system", theme: "system", emergencyName: "", emergencyPhone: "" };
+const DEFAULT_PREFS: Prefs = { userName: "", voiceRate: 1, voicePitch: 1, hapticsEnabled: true, stickySenseAudio: false, captionSize: "xlarge", highContrast: true, language: "system", theme: "system", emergencyName: "", emergencyPhone: "" };
 
 const INITIAL_STATE = {
   hasOnboarded: false,

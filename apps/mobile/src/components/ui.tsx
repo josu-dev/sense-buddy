@@ -1,6 +1,6 @@
 import type { Mode } from "@sense-buddy/shared";
 import { router, usePathname } from "expo-router";
-import { ArrowLeft, Ear, Ellipsis, Eye, House, Settings, User, type LucideIcon } from "lucide-react-native";
+import { ArrowLeft, Ear, Ellipsis, Eye, House, Megaphone, Settings, User, type LucideIcon } from "lucide-react-native";
 import { useEffect, useState, type ReactNode } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
@@ -145,9 +145,9 @@ export function ConfirmDialog({
 }
 
 /**
- * Brand mark: the two sense glyphs (Eye = see, Ear = hear) in mode accents.
- * Decorative — hidden from screen readers; every usage pairs it with a
- * real header right below.
+ * Brand mark: the three sense glyphs (Eye = see, Ear = hear, Megaphone =
+ * say) in mode accents. Decorative — hidden from screen readers; every
+ * usage pairs it with a real header right below.
  */
 export function BrandMark({ size = 52 }: { size?: number }) {
   const C = useThemeColors();
@@ -159,6 +159,7 @@ export function BrandMark({ size = 52 }: { size?: number }) {
     >
       <Eye size={size} strokeWidth={2} color={C.accentText.visual} />
       <Ear size={size} strokeWidth={2} color={C.accentText.hearing} />
+      <Megaphone size={size} strokeWidth={2} color={C.accentText.speak} />
     </View>
   );
 }
@@ -358,7 +359,7 @@ export function WaveBars({ color, active }: { color: string; active: boolean }) 
   );
 }
 
-/** Top-level, always-visible Visual / Hearing mode switch. */
+/** Top-level, always-visible Visual / Hearing / Speak mode switch. */
 export function ModeSwitch() {
   const mode = useBuddyStore((s) => s.mode);
   const setMode = useBuddyStore((s) => s.setMode);
@@ -390,9 +391,10 @@ export function ModeSwitch() {
     );
   };
   return (
-    <View className="flex-row gap-3" accessibilityRole="radiogroup" accessibilityLabel={S.modeGroupLabel}>
+    <View className="gap-3" accessibilityRole="radiogroup" accessibilityLabel={S.modeGroupLabel}>
       {item("visual", Eye, S.modeCantSee, S.modeSeeSub)}
       {item("hearing", Ear, S.modeCantHear, S.modeHearSub)}
+      {item("speak", Megaphone, S.modeCantSpeak, S.modeSpeakSub)}
     </View>
   );
 }
@@ -414,8 +416,8 @@ export function BottomNav() {
   const mode = useBuddyStore((s) => s.mode);
   const S = useStrings();
   const C = useThemeColors();
-  const sensePath = mode === "visual" ? "/sense/see" : "/sense/listen";
-  const SenseIcon = mode === "visual" ? Eye : Ear;
+  const sensePath = mode === "visual" ? "/sense/see" : mode === "hearing" ? "/sense/listen" : "/sense/say";
+  const SenseIcon = mode === "visual" ? Eye : mode === "hearing" ? Ear : Megaphone;
   const items: { path: string; Icon: LucideIcon; label: string; active: boolean }[] = [
     { path: "/home", Icon: House, label: S.navHome, active: pathname === "/home" },
     { path: sensePath, Icon: SenseIcon, label: S.navSense, active: pathname.startsWith("/sense") },

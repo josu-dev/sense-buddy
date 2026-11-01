@@ -34,6 +34,33 @@ export class ApiError extends Error {
 
 export const isUnauthorized = (e: unknown): boolean => e instanceof ApiError && e.status === 401;
 
+type UnauthorizedListener = () => void;
+const unauthorizedListeners = new Set<UnauthorizedListener>();
+
+/**
+ * Subscribe to global session-expiry events: fired once per API call that
+ * answers 401 (deleted account, expired/revoked session). The root layout
+ * uses this to sign out + redirect to /login even when the failing call
+ * swallows its error (e.g. fire-and-forget preference sync). Returns an
+ * unsubscribe function.
+ */
+export function onUnauthorized(listener: UnauthorizedListener): () => void {
+  unauthorizedListeners.add(listener);
+  return () => {
+    unauthorizedListeners.delete(listener);
+  };
+}
+
+function notifyUnauthorized(): void {
+  for (const listener of [...unauthorizedListeners]) {
+    try {
+      listener();
+    } catch {
+      // Listener errors must never break the request path.
+    }
+  }
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = await getToken();
   const controller = new AbortController();
@@ -50,7 +77,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     });
     const json = (await res.json().catch(() => null)) as (T & { error?: string; message?: string }) | null;
     if (!res.ok) {
-      if (res.status === 401) await setToken(null); // sesión inválida: no reintentar con el mismo token
+      if (res.status === 401) {
+        // Invalid session: drop the token so nothing retries with it, then
+        // tell the app to sign out + go to /login (before throwing, so even
+        // callers that swallow the error still bounce to login).
+        await setToken(null);
+        notifyUnauthorized();
+      }
       throw new ApiError(res.status, json?.message ?? json?.error ?? `Request failed (${res.status})`);
     }
     return json as T;
@@ -169,6 +202,8 @@ export const api = {
     request<SayResponse>("/api/ai/say", { method: "POST", body: JSON.stringify({ text, targetLang }) }),
   usage: () => request<Usage>("/api/me/usage"),
   deleteAccount: () => request<{ deleted: boolean }>("/api/me", { method: "DELETE" }),
+  // Fire-and-forget: offline-safe. A 401 still bounces to /login via the
+  // global onUnauthorized listener (fired inside request, before the throw).
   syncPreferences: (body: PreferencePatch) =>
     request("/api/me/preferences", { method: "PATCH", body: JSON.stringify(body) }).catch(() => null),
 };

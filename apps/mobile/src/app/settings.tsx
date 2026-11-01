@@ -92,6 +92,12 @@ export default function Settings() {
             <Chips options={[0.75, 1, 1.25, 1.5]} value={prefs.voiceRate} onPick={(voiceRate) => save({ voiceRate })} render={(v) => ({ label: `${v}×` })} />
             <BigButton label={S.setHearVoice} color={C.secondary} dark={!C.isDark} icon={Volume2} onPress={() => speak(S.setHearVoiceSample, prefs)} />
           </Row>
+          <Row label={S.setStickyAudio}>
+            <View className="flex-row items-center justify-between">
+              <Text className="flex-1 text-lg text-muted">{S.setStickyAudioSub}</Text>
+              <Switch value={prefs.stickySenseAudio} onValueChange={(stickySenseAudio) => save({ stickySenseAudio })} accessibilityLabel={S.setStickyAudioA11y} />
+            </View>
+          </Row>
           <Row label={S.setCaption}>
             <Chips options={["large", "xlarge"] as const} value={prefs.captionSize} onPick={(captionSize) => save({ captionSize })} render={(v) => ({ label: v === "large" ? S.setLarge : S.setXLarge })} />
           </Row>

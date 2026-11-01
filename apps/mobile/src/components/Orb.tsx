@@ -130,8 +130,8 @@ function hexRgb(hex: string): [number, number, number] {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-/** Orb tint: the two user modes plus the neutral Say tab (violet). */
-export type OrbMode = Mode | "speak";
+/** Orb tint: one per user mode (speak = violet Say tab). */
+export type OrbMode = Mode;
 
 const PALETTE: Record<OrbMode, { deep: string; main: string; hi: string }> = {
   visual: { deep: "#3A2404", main: "#FFB224", hi: "#FFE3A3" },

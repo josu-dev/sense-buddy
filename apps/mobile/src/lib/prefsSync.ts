@@ -22,6 +22,7 @@ export function pushPreferences() {
     voiceRate: prefs.voiceRate,
     voicePitch: prefs.voicePitch,
     hapticsEnabled: prefs.hapticsEnabled,
+    stickySenseAudio: prefs.stickySenseAudio,
     captionSize: prefs.captionSize,
     highContrast: prefs.highContrast,
     userName: prefs.userName,
@@ -37,7 +38,7 @@ export async function hydratePreferences(): Promise<void> {
   const p = me.preference;
   if (!p) return;
   const { setMode, updatePrefs } = useBuddyStore.getState();
-  if (p.mode === "visual" || p.mode === "hearing") setMode(p.mode);
+  if (p.mode === "visual" || p.mode === "hearing" || p.mode === "speak") setMode(p.mode);
   const patch: Partial<Prefs> = {};
   if (p.language === "system" || p.language === "en" || p.language === "es" || p.language === "pt" || p.language === "fr") {
     patch.language = p.language;
@@ -48,6 +49,7 @@ export async function hydratePreferences(): Promise<void> {
   if (typeof p.voiceRate === "number") patch.voiceRate = p.voiceRate;
   if (typeof p.voicePitch === "number") patch.voicePitch = p.voicePitch;
   if (typeof p.hapticsEnabled === "boolean") patch.hapticsEnabled = p.hapticsEnabled;
+  if (typeof p.stickySenseAudio === "boolean") patch.stickySenseAudio = p.stickySenseAudio;
   if (p.captionSize === "large" || p.captionSize === "xlarge") patch.captionSize = p.captionSize;
   if (typeof p.highContrast === "boolean") patch.highContrast = p.highContrast;
   if (typeof p.userName === "string") patch.userName = p.userName;

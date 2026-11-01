@@ -30,5 +30,5 @@ export default function Index() {
   if (!hasOnboarded) return <Redirect href="/onboarding" />;
   if (!user) return <Redirect href="/login" />;
   // Default entry is the canonical sense tab, not the welcome page.
-  return <Redirect href={mode === "visual" ? "/sense/see" : "/sense/listen"} />;
+  return <Redirect href={mode === "visual" ? "/sense/see" : mode === "hearing" ? "/sense/listen" : "/sense/say"} />;
 }
