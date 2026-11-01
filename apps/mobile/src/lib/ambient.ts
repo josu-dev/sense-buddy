@@ -210,7 +210,7 @@ export function useAmbientClips(onClip: (audioBase64: string | undefined, clipIn
 }
 
 /**
- * Press-and-hold single WAV clip (manual Listen mode, Home hold-to-talk).
+ * Press-and-hold single WAV clip (manual Listen mode hold-to-talk).
  * `holdEnd` resolves to the base64 WAV, or null when nothing usable was
  * captured. Voice level streams through `level` while held.
  */

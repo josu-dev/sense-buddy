@@ -1,6 +1,6 @@
 import type { Mode } from "@sense-buddy/shared";
 import { router, usePathname } from "expo-router";
-import { ArrowLeft, Ear, Eye, House, Megaphone, Settings, User, type LucideIcon } from "lucide-react-native";
+import { ArrowLeft, Ear, Eye, Megaphone, User, type LucideIcon } from "lucide-react-native";
 import { useEffect, type ReactNode } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
@@ -278,7 +278,7 @@ export function ModeNotch() {
   );
 }
 
-/** Stage header: centered View/Listen notch · Settings circle (one-tap nav). */
+/** Stage header: centered View/Listen notch · Profile circle (one-tap nav). */
 export function StageHeader() {
   const S = useStrings();
   const C = useThemeColors();
@@ -289,13 +289,13 @@ export function StageHeader() {
         <ModeNotch />
       </View>
       <Pressable
-        onPress={() => router.navigate("/settings" as never)}
+        onPress={() => router.navigate("/profile" as never)}
         accessibilityRole="button"
-        accessibilityLabel={S.navSettings}
+        accessibilityLabel={S.navProfile}
         className="h-[60px] w-[60px] items-center justify-center rounded-full border border-line active:opacity-80"
         style={{ backgroundColor: C.scrim }}
       >
-        <Settings size={26} strokeWidth={2.25} color={C.paper} />
+        <User size={26} strokeWidth={2.25} color={C.paper} />
       </Pressable>
     </View>
   );
@@ -375,9 +375,9 @@ export function ModeSwitch() {
 }
 
 /**
- * Chunky bottom menu for NON-sense pages (home / profile / settings).
- * Only three shortcuts: Home (left) · Sense (center, mode's canonical tab)
- * · Profile (right). Sense screens use StageHeader instead — never this.
+ * Chunky bottom menu for NON-sense pages (profile / settings).
+ * Only two shortcuts: Sense (left, mode's canonical tab) · Profile (right).
+ * Sense screens use StageHeader instead — never this.
  *
  * Ghost tabs: no border/fill — the active tab shows in the mode accent,
  * idle tabs dim. Wrapped in its own bottom SafeAreaView painted
@@ -394,7 +394,6 @@ export function BottomNav() {
   const sensePath = mode === "visual" ? "/sense/see" : mode === "hearing" ? "/sense/listen" : "/sense/say";
   const SenseIcon = mode === "visual" ? Eye : mode === "hearing" ? Ear : Megaphone;
   const items: { path: string; Icon: LucideIcon; label: string; active: boolean }[] = [
-    { path: "/home", Icon: House, label: S.navHome, active: pathname === "/home" },
     { path: sensePath, Icon: SenseIcon, label: S.navSense, active: pathname.startsWith("/sense") },
     // Settings is a Profile detail page — keep Profile lit while there.
     { path: "/profile", Icon: User, label: S.navProfile, active: pathname === "/profile" || pathname === "/settings" },

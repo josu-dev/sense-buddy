@@ -113,9 +113,9 @@ Verify everything: `pnpm typecheck` (all workspaces) and
   I can't hear well"* — that one answer reshapes the entire UX. The name comes
   after sign-in: guests pick it on the login screen, Google users bring it
   from their profile (both editable later in Settings).
-- **Home**: the orb (tap = talk, double-tap = sense), a top-level
-  Visual/Hearing switch that's always visible, and a chunky bottom menu with
-  Home · See/Listen · Profile · Settings. Every target ≥ 52–72pt, every control
+- **Sense**: the orb, a top notch to switch See/Listen/Say, a one-tap
+  Profile shortcut in the header, and a chunky bottom menu with
+  Sense · Profile on the other pages. Every target ≥ 52–72pt, every control
   labelled for screen readers, `accessibilityLiveRegion` on buddy replies/alerts.
 - **See for me**: camera → downscale on-device → spatial guidance spoken aloud,
   hazards in coral, objects listed with direction arrows + step counts.

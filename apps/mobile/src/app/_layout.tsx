@@ -97,7 +97,7 @@ function SpeechNavGuard() {
 }
 
 /**
- * Auth-gated navigator: home/profile/settings/sense require a signed-in user.
+ * Auth-gated navigator: profile/settings/sense require a signed-in user.
  * When the guard flips true→false (sign-out, account delete, expired
  * session), Expo Router removes ALL of those screens' history entries and
  * bounces to /login — so back/gesture can never return to a stale view the
@@ -111,7 +111,6 @@ function RootNavigator() {
     /* animation:none: the old fade cross-rendered old+new GL orbs for a frame = flash. */
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.ink }, animation: "none" }}>
       <Stack.Protected guard={user !== null} redirectTo="/login">
-        <Stack.Screen name="home" />
         <Stack.Screen name="profile" />
         <Stack.Screen name="settings" />
         <Stack.Screen name="sense" />

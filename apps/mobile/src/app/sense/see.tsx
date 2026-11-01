@@ -2,7 +2,7 @@ import type { OrbState } from "@sense-buddy/shared";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { router, useIsFocused } from "expo-router";
-import { Camera, House, User } from "lucide-react-native";
+import { Camera } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -276,17 +276,8 @@ export default function See() {
           </GestureDetector>
         </View>
 
-        {/* Bottom dock: Home · Manual/Live pill · Profile (one-tap nav). */}
+        {/* Bottom dock: Manual/Live pill (Profile lives in the StageHeader). */}
         <View className="flex-row items-center gap-2">
-          <Pressable
-            onPress={() => router.navigate("/home" as never)}
-            accessibilityRole="button"
-            accessibilityLabel={S.navHome}
-            className="h-[60px] w-[60px] items-center justify-center rounded-full border border-line active:opacity-80"
-            style={{ backgroundColor: C.scrim }}
-          >
-            <House size={26} strokeWidth={2.25} color={C.paper} />
-          </Pressable>
           {noSession ? (
             <Pressable
               onPress={() => router.replace("/login")}
@@ -347,15 +338,6 @@ export default function See() {
               })}
             </View>
           )}
-          <Pressable
-            onPress={() => router.navigate("/profile" as never)}
-            accessibilityRole="button"
-            accessibilityLabel={S.navProfile}
-            className="h-[60px] w-[60px] items-center justify-center rounded-full border border-line active:opacity-80"
-            style={{ backgroundColor: C.scrim }}
-          >
-            <User size={26} strokeWidth={2.25} color={C.paper} />
-          </Pressable>
         </View>
 
         {/* Invisible: keeps the spoken guidance reachable for screen readers. */}
