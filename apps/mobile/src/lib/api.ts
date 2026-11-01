@@ -1,4 +1,4 @@
-import type { ChatResponse, ListenResponse, Mode, PreferencePatch, SeeResponse, TalkResponse } from "@sense-buddy/shared";
+import type { AppLang, ChatResponse, ListenResponse, Mode, PreferencePatch, SayResponse, SeeResponse, TalkResponse } from "@sense-buddy/shared";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 import { getAppLang } from "./i18n";
@@ -164,6 +164,9 @@ export const api = {
     }),
   talk: (audioBase64: string, mode: Mode) =>
     request<TalkResponse>("/api/ai/talk", { method: "POST", body: JSON.stringify({ audioBase64, mode, lang: getAppLang() }) }),
+  /** Say mode: translate typed text to the target language, then speak the result. */
+  say: (text: string, targetLang: AppLang) =>
+    request<SayResponse>("/api/ai/say", { method: "POST", body: JSON.stringify({ text, targetLang }) }),
   usage: () => request<Usage>("/api/me/usage"),
   deleteAccount: () => request<{ deleted: boolean }>("/api/me", { method: "DELETE" }),
   syncPreferences: (body: PreferencePatch) =>

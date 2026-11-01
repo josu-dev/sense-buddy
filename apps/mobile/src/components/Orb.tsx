@@ -1,7 +1,7 @@
 import type { Mode, OrbState } from "@sense-buddy/shared";
 import { GLView, type ExpoWebGLRenderingContext } from "expo-gl";
 import { useIsFocused } from "expo-router";
-import { Ear, Eye, TriangleAlert } from "lucide-react-native";
+import { Ear, Eye, Megaphone, TriangleAlert } from "lucide-react-native";
 import { memo, useEffect, useRef, useState } from "react";
 import { AppState, Pressable, Text, View, type LayoutChangeEvent } from "react-native";
 import { useThemeColors } from "../lib/theme";
@@ -71,9 +71,9 @@ void main() {
   // Deforming edge: layered angular waves, wilder with the voice level.
   float wobAmp = 0.010 + 0.030 * u_level + 0.006 * u_energy;
   float wob = sin(ang * 3.0 + t * 2.1) * 0.45
-            + sin(ang * 5.0 - t * 3.2) * 0.30
-            + sin(ang * 8.0 + t * 4.6) * 0.18
-            + sin(ang * 13.0 - t * 6.1) * 0.07;
+              + sin(ang * 5.0 - t * 3.2) * 0.30
+              + sin(ang * 8.0 + t * 4.6) * 0.18
+              + sin(ang * 13.0 - t * 6.1) * 0.07;
   float sphereR = 0.60 + wob * wobAmp + u_level * 0.012;
   float fieldR = sphereR + 0.05;
 
@@ -130,14 +130,19 @@ function hexRgb(hex: string): [number, number, number] {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-const PALETTE: Record<Mode, { deep: string; main: string; hi: string }> = {
+/** Orb tint: the two user modes plus the neutral Say tab (violet). */
+export type OrbMode = Mode | "speak";
+
+const PALETTE: Record<OrbMode, { deep: string; main: string; hi: string }> = {
   visual: { deep: "#3A2404", main: "#FFB224", hi: "#FFE3A3" },
   hearing: { deep: "#043A3F", main: "#2EE6C8", hi: "#B8FFF1" },
+  speak: { deep: "#2A1B4E", main: "#A78BFA", hi: "#DDD0FF" },
 };
 /** Saturated palette for light backgrounds — the dark-mode pastels wash out on white. */
-const LIGHT_PALETTE: Record<Mode, { deep: string; main: string; hi: string }> = {
+const LIGHT_PALETTE: Record<OrbMode, { deep: string; main: string; hi: string }> = {
   visual: { deep: "#92400E", main: "#D97706", hi: "#FBBF24" },
   hearing: { deep: "#115E59", main: "#0D9488", hi: "#2DD4BF" },
+  speak: { deep: "#5B21B6", main: "#7C3AED", hi: "#A78BFA" },
 };
 const ALERT_MAIN = "#FF5468";
 
@@ -168,7 +173,7 @@ export const Orb = memo(function Orb({
   accessibilityLabel,
 }: {
   state: OrbState;
-  mode: Mode;
+  mode: OrbMode;
   onTap?: () => void;
   onDoubleTap?: () => void;
   onPressIn?: () => void;
@@ -376,6 +381,8 @@ export const Orb = memo(function Orb({
                 <TriangleAlert size={disc * 0.18} strokeWidth={2.25} color={accent} />
               ) : mode === "visual" ? (
                 <Eye size={disc * 0.18} strokeWidth={2} color={accent} />
+              ) : mode === "speak" ? (
+                <Megaphone size={disc * 0.18} strokeWidth={2} color={accent} />
               ) : (
                 <Ear size={disc * 0.18} strokeWidth={2} color={accent} />
               )}

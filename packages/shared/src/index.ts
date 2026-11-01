@@ -130,6 +130,20 @@ export const TalkResponseSchema = z.object({
 });
 export type TalkResponse = z.infer<typeof TalkResponseSchema>;
 
+/** Say mode: translate typed text to the target language, then speak it. */
+export const SayRequestSchema = z.object({
+  text: z.string().min(1).max(2000),
+  targetLang: LangSchema,
+});
+export type SayRequest = z.infer<typeof SayRequestSchema>;
+
+export const SayResponseSchema = z.object({
+  /** Translated text (or the original when already in targetLang / mock mode). */
+  text: z.string(),
+  targetLang: LangSchema,
+});
+export type SayResponse = z.infer<typeof SayResponseSchema>;
+
 /** Distinct vibration patterns so hearing-impaired users can tell alerts apart by touch. */
 export const HAPTIC_PATTERNS: Record<string, number[]> = {
   critical: [0, 400, 100, 400, 100, 400], // siren / alarm: long triple buzz
@@ -150,7 +164,7 @@ export const PRIORITY_SOUNDS: { kind: SoundKind; label: string }[] = [
 ];
 
 /** Estimated upstream token cost per route, used for quota pre-checks. */
-export const ROUTE_TOKEN_COST = { chat: 2000, see: 4500, listen: 2500, talk: 2500 } as const;
+export const ROUTE_TOKEN_COST = { chat: 2000, see: 4500, listen: 2500, talk: 2500, say: 1500 } as const;
 
 /** Free-tier daily budget per user (upstream tokens). Enforced server-side. */
 export const DEFAULT_DAILY_TOKEN_BUDGET = 60_000;

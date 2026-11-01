@@ -62,4 +62,16 @@ export const auth = betterAuth({
   ],
   trustedOrigins: ["sensebuddy://", "sensebuddy://*", "exp://", "exp://*"],
   rateLimit: { enabled: true, window: 60, max: 100 },
+  advanced: {
+    // The only client is the mobile app, which authenticates with Bearer
+    // tokens (SecureStore + `Authorization` header) — Bearer is immune to
+    // CSRF by design, so cookie-based CSRF checks buy nothing here. Worse,
+    // they actively break login: the phone's OS networking stack persists
+    // the `better-auth.session_token` cookie from an earlier sign-in and
+    // silently resends it (React Native fetch never sends `Origin`), so any
+    // re-login with a stale cookie got 403 MISSING_OR_NULL_ORIGIN and the
+    // user was stuck without a session. A stale cookie now simply yields no
+    // session (401) and the app signs in again cleanly.
+    disableCSRFCheck: true,
+  },
 });

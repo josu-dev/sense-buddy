@@ -204,11 +204,6 @@ export default function Listen() {
             }}
             accessibilityLiveRegion="polite"
           >
-            {/* Top-edge light like the reference panel */}
-            <View
-              pointerEvents="none"
-              style={{ position: "absolute", top: 0, left: 28, right: 28, height: 1, backgroundColor: "rgba(62,230,255,0.4)" }}
-            />
             <View className="flex-row items-center gap-2.5">
               <WaveBars color={ACCENT.hearing} active={wavesActive} />
               <Text className="flex-1 text-[15px] text-muted">{S.liveCaptions}</Text>
@@ -217,7 +212,7 @@ export default function Listen() {
                 accessibilityRole="radiogroup"
                 accessibilityLabel={S.liveCaptions}
               >
-                {(["live", "manual"] as const).map((m) => {
+                {(["manual", "live"] as const).map((m) => {
                   const selected = captureMode === m;
                   const label = m === "live" ? S.listenLive : S.listenManual;
                   return (

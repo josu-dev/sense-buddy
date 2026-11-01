@@ -5,6 +5,8 @@ import {
   type DetectedObject,
   type ListenRequest,
   type ListenResponse,
+  type SayRequest,
+  type SayResponse,
   type SeeRequest,
   type SeeResponse,
   type TalkRequest,
@@ -826,6 +828,27 @@ const TALK_FALLBACK: Record<AppLang, string> = {
   pt: "Não ouvi bem. Segure o botão e fale de novo.",
   fr: "Je n'ai pas bien entendu. Maintenez le bouton et parlez à nouveau.",
 };
+
+/**
+ * Say mode: translate typed text to the target language so the orb speaks the
+ * translation (not the original with a mismatched voice). Mock mode has no
+ * model, so it echoes the original and the client speaks it as-is.
+ */
+export async function sayTranslate(req: SayRequest): Promise<ProviderResult<SayResponse>> {
+  if (aiMode() === "mock") {
+    return {
+      data: { text: req.text, targetLang: req.targetLang },
+      inputTokens: estimateTokens(req.text),
+      outputTokens: 0,
+    };
+  }
+  const t = await translateToLang(req.text, req.targetLang);
+  return {
+    data: { text: t.data, targetLang: req.targetLang },
+    inputTokens: t.inputTokens,
+    outputTokens: t.outputTokens,
+  };
+}
 
 /**
  * Hold-to-talk: transcribe the voice clip, then answer it as a chat message.

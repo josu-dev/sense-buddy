@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Camera, Ear, Siren } from "lucide-react-native";
+import { Camera, Ear, Megaphone, Siren } from "lucide-react-native";
 import { Alert, Linking, ScrollView, Text, View } from "react-native";
 import { ACCENT, BigButton, BottomNav, BrandMark, Screen } from "../components/ui";
 import { useStrings } from "../lib/i18n";
@@ -63,6 +63,13 @@ export default function Home() {
               color={ACCENT.hearing}
               icon={Ear}
               onPress={() => router.navigate("/sense/listen" as never)}
+            />
+            <BigButton
+              label={S.homeSpeakBtn}
+              hint={S.homeSpeakHint}
+              color={ACCENT.speak}
+              icon={Megaphone}
+              onPress={() => router.navigate("/sense/say" as never)}
             />
 
             {lastReply ? (

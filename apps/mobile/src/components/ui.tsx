@@ -14,11 +14,11 @@ import Animated, {
 } from "react-native-reanimated";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 import { useStrings } from "../lib/i18n";
-import { useSense } from "../lib/sense";
+import { useSense, type SenseTab } from "../lib/sense";
 import { useBuddyStore } from "../lib/store";
 import { useThemeColors } from "../lib/theme";
 
-export const ACCENT = { visual: "#FFB224", hearing: "#3EE6FF" } as const;
+export const ACCENT = { visual: "#FFB224", hearing: "#3EE6FF", speak: "#A78BFA" } as const;
 
 export function Screen({ children, edges }: { children: ReactNode; edges?: Edge[] }) {
   return (
@@ -210,33 +210,33 @@ export function AppleLogo({ size = 24, color = "#000000" }: { size?: number; col
 }
 
 /**
- * Top notch: pill with two tabs — View / Listen.
+ * Top notch: pill with three tabs — View / Listen / Say.
  * Rendered ONCE by sense/_layout above the Tabs navigator, so it never
  * remounts on tab switches. Navigation only — it never touches global
  * `mode` itself; the layout syncs the preference after the tab commits
  * (the old setMode-before-navigate was the main flash source).
  */
 export function ModeNotch() {
-  const { tab: activeTab, goSee, goListen } = useSense();
+  const { tab: activeTab, goSee, goListen, goSay } = useSense();
   const S = useStrings();
   const C = useThemeColors();
-  const active: Mode = activeTab === "see" ? "visual" : "hearing";
 
-  const pick = (m: Mode) => {
-    if (m === "visual") goSee();
-    else goListen();
+  const pick = (t: SenseTab) => {
+    if (t === "see") goSee();
+    else if (t === "listen") goListen();
+    else goSay();
   };
 
-  const tabBtn = (m: Mode, label: string) => {
-    const selected = active === m;
-    const color = ACCENT[m];
+  const tabBtn = (t: SenseTab, label: string) => {
+    const selected = activeTab === t;
+    const color = t === "see" ? ACCENT.visual : t === "listen" ? ACCENT.hearing : ACCENT.speak;
     return (
       <Pressable
-        onPress={() => pick(m)}
+        onPress={() => pick(t)}
         accessibilityRole="tab"
         accessibilityState={{ selected }}
         accessibilityLabel={`${label} mode`}
-        className="min-h-[52px] flex-1 items-center justify-center rounded-full px-4"
+        className="min-h-[52px] flex-1 items-center justify-center rounded-full px-2"
         style={{
           backgroundColor: selected ? color : "transparent",
           shadowColor: selected ? color : "transparent",
@@ -246,7 +246,7 @@ export function ModeNotch() {
           elevation: selected ? 8 : 0,
         }}
       >
-        <Text className="text-[17px] font-semibold" style={{ color: selected ? C.onCyan : C.tabIdle }}>
+        <Text className="text-[16px] font-semibold" style={{ color: selected ? C.onCyan : C.tabIdle }}>
           {label}
         </Text>
       </Pressable>
@@ -256,13 +256,14 @@ export function ModeNotch() {
   return (
     <View className="items-center pb-3 pt-1">
       <View
-        className="w-[300px] max-w-full flex-row rounded-full border border-line p-1"
+        className="w-[340px] max-w-full flex-row rounded-full border border-line p-1"
         style={{ backgroundColor: C.scrim }}
         accessibilityRole="tablist"
         accessibilityLabel={S.modeGroupLabel}
       >
-        {tabBtn("visual", S.tabView)}
-        {tabBtn("hearing", S.tabListen)}
+        {tabBtn("see", S.tabView)}
+        {tabBtn("listen", S.tabListen)}
+        {tabBtn("say", S.tabSay)}
       </View>
     </View>
   );

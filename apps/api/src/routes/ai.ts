@@ -3,6 +3,8 @@ import {
   ChatResponseSchema,
   ListenRequestSchema,
   ROUTE_TOKEN_COST,
+  SayRequestSchema,
+  SayResponseSchema,
   SeeRequestSchema,
   TalkRequestSchema,
   TalkResponseSchema,
@@ -12,7 +14,7 @@ import type { AppEnv, AuthedUser } from "../lib/http";
 import { rateLimit, requireAuth } from "../lib/http";
 import { recordUsage, tokensUsedToday, usageSummary } from "../lib/usage";
 import { env } from "../env";
-import { analyzeScene, chatWithBuddy, listenAmbient, talkFromVoice } from "../providers/meta";
+import { analyzeScene, chatWithBuddy, listenAmbient, sayTranslate, talkFromVoice } from "../providers/meta";
 
 export const aiRoutes = new Hono<AppEnv>();
 
@@ -68,6 +70,22 @@ aiRoutes.post("/listen", async (c) => {
     const result = await listenAmbient(body.data);
     await recordUsage(user.id, "listen", result.inputTokens, result.outputTokens);
     return c.json(result.data);
+  } catch (err) {
+    return c.json({ error: "ai_unavailable", message: err instanceof Error ? err.message : "unknown" }, 502);
+  }
+});
+
+aiRoutes.post("/say", rateLimit("ai-say", 30), async (c) => {
+  const user = c.get("user") as AuthedUser;
+  const body = SayRequestSchema.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: "invalid_request", details: body.error.issues }, 400);
+  if (!(await ensureQuota(user.id, "say"))) return c.json({ error: "quota_exceeded", usage: await usageSummary(user.id) }, 402);
+  try {
+    const result = await sayTranslate(body.data);
+    await recordUsage(user.id, "say", result.inputTokens, result.outputTokens);
+    const usage = await usageSummary(user.id);
+    c.header("X-Token-Remaining", String(usage.remaining));
+    return c.json(SayResponseSchema.parse(result.data));
   } catch (err) {
     return c.json({ error: "ai_unavailable", message: err instanceof Error ? err.message : "unknown" }, 502);
   }

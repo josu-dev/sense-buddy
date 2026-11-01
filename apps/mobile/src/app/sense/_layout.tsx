@@ -32,6 +32,7 @@ export default function SenseLayout() {
             >
               <Tabs.Screen name="see" />
               <Tabs.Screen name="listen" />
+              <Tabs.Screen name="say" />
               <Tabs.Screen name="index" options={{ href: null }} />
             </Tabs>
           </View>
