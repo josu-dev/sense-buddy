@@ -1,7 +1,7 @@
 import type { Mode } from "@sense-buddy/shared";
 import { router, usePathname } from "expo-router";
-import { ArrowLeft, Ear, Ellipsis, Eye, House, Megaphone, Settings, User, type LucideIcon } from "lucide-react-native";
-import { useEffect, useState, type ReactNode } from "react";
+import { ArrowLeft, Ear, Eye, House, Megaphone, Settings, User, type LucideIcon } from "lucide-react-native";
+import { useEffect, type ReactNode } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import Animated, {
@@ -237,7 +237,7 @@ export function ModeNotch() {
         accessibilityRole="tab"
         accessibilityState={{ selected }}
         accessibilityLabel={`${label} mode`}
-        className="min-h-[52px] flex-1 items-center justify-center rounded-full px-2"
+        className="min-h-[52px] min-w-0 flex-1 items-center justify-center rounded-full px-1"
         style={{
           backgroundColor: selected ? color : "transparent",
           shadowColor: selected ? color : "transparent",
@@ -245,9 +245,17 @@ export function ModeNotch() {
           shadowRadius: selected ? 18 : 0,
           shadowOffset: { width: 0, height: 2 },
           elevation: selected ? 8 : 0,
+          flexShrink: 1,
         }}
       >
-        <Text className="text-[16px] font-semibold" style={{ color: selected ? C.onCyan : C.tabIdle }}>
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+          ellipsizeMode="clip"
+          className="text-[14px] font-semibold"
+          style={{ color: selected ? C.onCyan : C.tabIdle, textAlign: "center" }}
+        >
           {label}
         </Text>
       </Pressable>
@@ -255,9 +263,9 @@ export function ModeNotch() {
   };
 
   return (
-    <View className="items-center pb-3 pt-1">
+    <View className="items-center py-2">
       <View
-        className="w-[340px] max-w-full flex-row rounded-full border border-line p-1"
+        className="w-full max-w-[360px] flex-row self-center rounded-full border border-line p-1"
         style={{ backgroundColor: C.scrim }}
         accessibilityRole="tablist"
         accessibilityLabel={S.modeGroupLabel}
@@ -270,58 +278,25 @@ export function ModeNotch() {
   );
 }
 
-/** Ghost corner button + sheet (Home · Profile · Settings) for the stage screens. */
-export function MoreMenu() {
-  const [open, setOpen] = useState(false);
+/** Stage header: centered View/Listen notch · Settings circle (one-tap nav). */
+export function StageHeader() {
   const S = useStrings();
   const C = useThemeColors();
-  const go = (path: string) => {
-    setOpen(false);
-    router.push(path as never);
-  };
-  const item = (path: string, Icon: LucideIcon, label: string) => (
-    <Pressable
-      onPress={() => go(path)}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      className="min-h-[60px] flex-row items-center gap-3 rounded-2xl bg-panel px-4 active:opacity-80"
-    >
-      <Icon size={22} strokeWidth={2.25} color={C.paper} />
-      <Text className="text-lg font-semibold text-paper">{label}</Text>
-    </Pressable>
-  );
   return (
-    <>
-      <Pressable
-        onPress={() => setOpen(true)}
-        accessibilityRole="button"
-        accessibilityLabel={S.menu}
-        className="h-[52px] w-[52px] items-center justify-center active:opacity-60"
-      >
-        <Ellipsis size={28} strokeWidth={2.25} color={C.paper} />
-      </Pressable>
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable onPress={() => setOpen(false)} className="flex-1 justify-end bg-black/60 px-5 pb-10" accessibilityLabel={S.menu}>
-          <View className="gap-2 rounded-[28px] border border-line bg-ink p-3">
-            {item("/home", House, S.navHome)}
-            {item("/profile", User, S.navProfile)}
-            {item("/settings", Settings, S.navSettings)}
-          </View>
-        </Pressable>
-      </Modal>
-    </>
-  );
-}
-
-/** Stage header: centered View/Listen notch with the ghost menu at the right (reference layout). */
-export function StageHeader() {
-  return (
-    <View className="flex-row items-start">
-      <View className="w-[52px]" />
+    <View className="flex-row items-center gap-2">
+      <View className="w-[60px]" />
       <View className="flex-1">
         <ModeNotch />
       </View>
-      <MoreMenu />
+      <Pressable
+        onPress={() => router.navigate("/settings" as never)}
+        accessibilityRole="button"
+        accessibilityLabel={S.navSettings}
+        className="h-[60px] w-[60px] items-center justify-center rounded-full border border-line active:opacity-80"
+        style={{ backgroundColor: C.scrim }}
+      >
+        <Settings size={26} strokeWidth={2.25} color={C.paper} />
+      </Pressable>
     </View>
   );
 }

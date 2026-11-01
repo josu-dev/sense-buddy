@@ -8,6 +8,8 @@
     "setup:local": "node scripts/setup-local.mjs",
     "dev:api": "pnpm --filter @sense-buddy/api dev",
     "dev:mobile": "pnpm --filter @sense-buddy/mobile start",
+    "db:migrate": "pnpm --filter @sense-buddy/api migrate",
+    "db:reset": "pnpm --filter @sense-buddy/api db:reset",
     "typecheck": "pnpm -r --if-present typecheck",
     "test:api": "pnpm --filter @sense-buddy/api smoke"
   }

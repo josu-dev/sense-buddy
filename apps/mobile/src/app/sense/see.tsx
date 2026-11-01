@@ -2,7 +2,7 @@ import type { OrbState } from "@sense-buddy/shared";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { router, useIsFocused } from "expo-router";
-import { Camera } from "lucide-react-native";
+import { Camera, House, User } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -276,14 +276,23 @@ export default function See() {
           </GestureDetector>
         </View>
 
-        {/* Manual / Live capture toggle (reference bottom pill). */}
-        <View className="items-center">
+        {/* Bottom dock: Home · Manual/Live pill · Profile (one-tap nav). */}
+        <View className="flex-row items-center gap-2">
+          <Pressable
+            onPress={() => router.navigate("/home" as never)}
+            accessibilityRole="button"
+            accessibilityLabel={S.navHome}
+            className="h-[60px] w-[60px] items-center justify-center rounded-full border border-line active:opacity-80"
+            style={{ backgroundColor: C.scrim }}
+          >
+            <House size={26} strokeWidth={2.25} color={C.paper} />
+          </Pressable>
           {noSession ? (
             <Pressable
               onPress={() => router.replace("/login")}
               accessibilityRole="button"
               accessibilityLabel={S.seeSessionBtn}
-              className="min-h-[60px] w-[300px] max-w-full items-center justify-center rounded-full px-4"
+              className="min-h-[60px] min-w-0 flex-1 items-center justify-center rounded-full px-4"
               style={{
                 backgroundColor: ACCENT.visual,
                 shadowColor: ACCENT.visual,
@@ -299,7 +308,7 @@ export default function See() {
             </Pressable>
           ) : (
             <View
-              className="w-[300px] max-w-full flex-row rounded-full border border-line p-1"
+              className="min-w-0 flex-1 flex-row rounded-full border border-line p-1"
               style={{ backgroundColor: C.scrim }}
               accessibilityRole="radiogroup"
               accessibilityLabel={S.seeCaptureMode}
@@ -314,7 +323,7 @@ export default function See() {
                     accessibilityRole="radio"
                     accessibilityState={{ selected }}
                     accessibilityLabel={label}
-                    className="min-h-[60px] flex-1 items-center justify-center rounded-full px-4"
+                    className="min-h-[60px] min-w-0 flex-1 items-center justify-center rounded-full px-2"
                     style={{
                       backgroundColor: selected ? ACCENT.visual : "transparent",
                       shadowColor: selected ? ACCENT.visual : "transparent",
@@ -324,7 +333,13 @@ export default function See() {
                       elevation: selected ? 8 : 0,
                     }}
                   >
-                    <Text className="text-[18px] font-semibold" style={{ color: selected ? C.onAmber : C.tabIdle }}>
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.85}
+                      className="text-[18px] font-semibold"
+                      style={{ color: selected ? C.onAmber : C.tabIdle, textAlign: "center" }}
+                    >
                       {label}
                     </Text>
                   </Pressable>
@@ -332,6 +347,15 @@ export default function See() {
               })}
             </View>
           )}
+          <Pressable
+            onPress={() => router.navigate("/profile" as never)}
+            accessibilityRole="button"
+            accessibilityLabel={S.navProfile}
+            className="h-[60px] w-[60px] items-center justify-center rounded-full border border-line active:opacity-80"
+            style={{ backgroundColor: C.scrim }}
+          >
+            <User size={26} strokeWidth={2.25} color={C.paper} />
+          </Pressable>
         </View>
 
         {/* Invisible: keeps the spoken guidance reachable for screen readers. */}
