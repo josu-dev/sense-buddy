@@ -24,9 +24,12 @@ app.get("/health", (c) => c.json({ ok: true, service: "sense-buddy-api", aiMode:
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 /**
- * Mock OAuth for the hackathon build. The mobile "Continue with Google/Apple"
- * buttons call this; it creates/fetches a real BetterAuth user and returns a
- * real Bearer session token, so every other endpoint is exercised for real.
+ * Mock OAuth for the hackathon build. DEV FALLBACK ONLY: the mobile app now
+ * prefers the real flows (BetterAuth anonymous plugin for guests, Google
+ * ID-token sign-in for Google) and calls this only when they are unavailable
+ * — e.g. OAuth credentials not configured, or running in Expo Go. It
+ * creates/fetches a real BetterAuth user and returns a real Bearer session
+ * token, so every other endpoint is exercised for real.
  * Disabled with ALLOW_MOCK_AUTH=false once real social providers are set.
  */
 app.post("/api/dev/mock-login", rateLimit("mock-login", 10), async (c) => {
@@ -64,6 +67,18 @@ app.get("/api/me", requireAuth, async (c) => {
 app.get("/api/me/usage", requireAuth, async (c) => {
   const user = c.get("user") as AuthedUser;
   return c.json(await usageSummary(user.id));
+});
+
+app.delete("/api/me", requireAuth, rateLimit("delete-account", 5), async (c) => {
+  const user = c.get("user") as AuthedUser;
+  // Explicit child deletes: better-sqlite3 leaves FK enforcement off by
+  // default, so the ON DELETE CASCADE clauses alone are not reliable.
+  await db.delete(schema.session).where(eq(schema.session.userId, user.id));
+  await db.delete(schema.account).where(eq(schema.account.userId, user.id));
+  await db.delete(schema.preference).where(eq(schema.preference.userId, user.id));
+  await db.delete(schema.usageEvent).where(eq(schema.usageEvent.userId, user.id));
+  await db.delete(schema.user).where(eq(schema.user.id, user.id));
+  return c.json({ deleted: true });
 });
 
 app.patch("/api/me/preferences", requireAuth, async (c) => {

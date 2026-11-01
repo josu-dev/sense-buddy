@@ -7,6 +7,8 @@ export const user = sqliteTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
   image: text("image"),
+  // Required by the BetterAuth anonymous plugin (guest sign-in).
+  isAnonymous: integer("is_anonymous", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

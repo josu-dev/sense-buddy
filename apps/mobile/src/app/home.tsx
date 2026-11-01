@@ -46,7 +46,7 @@ export default function Home() {
             {S.welcomeTitle}
             {prefs.userName ? `, ${prefs.userName}` : ""}
           </Text>
-          {user?.email ? <Text className="mb-3 mt-1 text-center text-base text-muted">{user.email}</Text> : null}
+          {user?.email && !user.isAnonymous ? <Text className="mb-3 mt-1 text-center text-base text-muted">{user.email}</Text> : null}
           <Text className="mb-5 text-center text-lg leading-relaxed text-muted">{S.welcomeSub}</Text>
 
           <View className="gap-3">

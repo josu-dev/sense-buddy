@@ -65,12 +65,21 @@ Ambient listen ─────────────────────�
 ## Auth, quotas & rate limiting (API)
 
 - **BetterAuth** with the Bearer plugin: the app stores the session token in
-  SecureStore and sends `Authorization: Bearer …`. Email/password works today;
-  Google/Apple social providers activate when `GOOGLE_*`/`APPLE_*` env vars are set.
-- **Mock OAuth (hackathon)**: the app's *Continue with Google/Apple/Guest*
-  buttons call `POST /api/dev/mock-login`, which creates a **real** BetterAuth
-  user + session. Disable with `ALLOW_MOCK_AUTH=false`. Swapping in real OAuth
-  via `expo-auth-session` + BetterAuth's Expo flow touches only the login screen.
+  SecureStore and sends `Authorization: Bearer …`. Every sign-in returns the
+  token in the `set-auth-token` response header.
+- **Guests** are real anonymous accounts (BetterAuth anonymous plugin,
+  `POST /api/auth/sign-in/anonymous`): temp `@sensebuddy.app` email, name
+  asked right after sign-in, rename via `POST /api/auth/update-user`. Linking
+  a permanent method later migrates the guest's preferences + usage.
+- **Google** is real OAuth when configured: the app gets a Google ID token
+  on-device (`expo-auth-session` browser flow, dev build) and the API verifies
+  it (`POST /api/auth/sign-in/social` with `idToken`). Needs
+  `GOOGLE_*_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` on the API and
+  `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` on the app; without them the button falls
+  back to a demo account with a notice.
+- **Mock OAuth fallback** (`POST /api/dev/mock-login`, `ALLOW_MOCK_AUTH=false`
+  to disable): used only when the real flows are unavailable — Expo Go, or
+  OAuth credentials not set. Still creates a real BetterAuth user + session.
 - **Token consumption**: every AI call records upstream input/output tokens in
   `usage_event`; users get `DAILY_TOKEN_BUDGET` (default 60k/day). Quota is
   checked *before* spending (`402 quota_exceeded`), balance returned in
@@ -100,9 +109,10 @@ Verify everything: `pnpm typecheck` (all workspaces) and
 
 ## The app experience
 
-- **Onboarding**: three screens, the first real question is *"I can't see well /
-  I can't hear well"* — that one answer reshapes the entire UX. Then your name
-  (used for name-call alerts).
+- **Onboarding**: two steps, the first real question is *"I can't see well /
+  I can't hear well"* — that one answer reshapes the entire UX. The name comes
+  after sign-in: guests pick it on the login screen, Google users bring it
+  from their profile (both editable later in Settings).
 - **Home**: the orb (tap = talk, double-tap = sense), a top-level
   Visual/Hearing switch that's always visible, and a chunky bottom menu with
   Home · See/Listen · Profile · Settings. Every target ≥ 52–72pt, every control
@@ -131,6 +141,7 @@ Verify everything: `pnpm typecheck` (all workspaces) and
   (`expo-speech-recognition`) needs a development build — the voice layer
   (`src/lib/voice.ts`) is the single swap point, as is real ambient audio
   classification (today: API-side; the response contract is already final).
-- Real OAuth via `expo-auth-session`; SAM 3 hosted endpoint for `sam3+llama`
+- Real Apple OAuth + native Google SDK (`@react-native-google-signin`) as a
+  step up from the browser ID-token flow; SAM 3 hosted endpoint for `sam3+llama`
   engine; push-notification alerts; on-device sound classification for
   background listening; streaming (WebSocket) low-latency guidance.

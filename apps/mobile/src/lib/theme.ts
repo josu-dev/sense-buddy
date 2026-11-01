@@ -92,6 +92,8 @@ export type ThemeColors = {
   placeholder: string;
   /** Secondary (non-accent) button fill. */
   secondary: string;
+  /** Destructive actions (mirrors the coral var for inline styles). */
+  danger: string;
   /** Translucent overlay panels (notch, menus, cards, PiP). */
   scrim: string;
   scrimStrong: string;
@@ -121,6 +123,7 @@ const DARK_COLORS: ThemeColors = {
   tabIdle: "#8FA6B8",
   placeholder: "#5E7A94",
   secondary: "#122539",
+  danger: "#FF5468",
   scrim: "rgba(10,24,38,0.82)",
   scrimStrong: "rgba(10,24,38,0.88)",
   appleBtn: "#F4F9FF",
@@ -147,6 +150,7 @@ const LIGHT_COLORS: ThemeColors = {
   tabIdle: "#5B7A94",
   placeholder: "#7C93A8",
   secondary: "#E4EDF6",
+  danger: "#D81F3C",
   scrim: "rgba(255,255,255,0.88)",
   scrimStrong: "rgba(255,255,255,0.94)",
   appleBtn: "#0A1A2B",

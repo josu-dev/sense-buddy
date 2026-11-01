@@ -17,7 +17,7 @@ export type Prefs = {
   emergencyPhone: string;
 };
 
-export type BuddyUser = { id: string; name: string; email: string };
+export type BuddyUser = { id: string; name: string; email: string; isAnonymous?: boolean | null };
 
 export type SeeCapture = "live" | "manual";
 
@@ -30,28 +30,39 @@ type State = {
   lastReply: string;
   setMode: (mode: Mode) => void;
   setSeeCapture: (c: SeeCapture) => void;
-  completeOnboarding: (mode: Mode, userName: string) => void;
+  completeOnboarding: (mode: Mode, userName?: string) => void;
   signIn: (user: BuddyUser) => void;
   signOut: () => void;
+  /** Wipe everything back to factory defaults (account deleted). */
+  resetAll: () => void;
   updatePrefs: (p: Partial<Prefs>) => void;
   setLastReply: (s: string) => void;
+};
+
+const DEFAULT_PREFS: Prefs = { userName: "", voiceRate: 1, voicePitch: 1, hapticsEnabled: true, captionSize: "xlarge", highContrast: true, language: "system", theme: "system", emergencyName: "", emergencyPhone: "" };
+
+const INITIAL_STATE = {
+  hasOnboarded: false,
+  user: null as BuddyUser | null,
+  mode: "visual" as Mode,
+  seeCapture: "manual" as SeeCapture,
+  lastReply: "",
 };
 
 export const useBuddyStore = create<State>()(
   persist(
     (set) => ({
-      hasOnboarded: false,
-      user: null,
-      mode: "visual",
-      seeCapture: "manual",
-      prefs: { userName: "", voiceRate: 1, voicePitch: 1, hapticsEnabled: true, captionSize: "xlarge", highContrast: true, language: "system", theme: "system", emergencyName: "", emergencyPhone: "" },
-      lastReply: "",
+      ...INITIAL_STATE,
+      prefs: { ...DEFAULT_PREFS },
       setMode: (mode) => set({ mode }),
       setSeeCapture: (seeCapture) => set({ seeCapture }),
       completeOnboarding: (mode, userName) =>
-        set((s) => ({ hasOnboarded: true, mode, prefs: { ...s.prefs, userName } })),
+        // The name is collected after sign-in (guest step) or comes from the
+        // OAuth profile — onboarding only sets it when explicitly given.
+        set((s) => ({ hasOnboarded: true, mode, prefs: userName === undefined ? s.prefs : { ...s.prefs, userName } })),
       signIn: (user) => set({ user }),
       signOut: () => set({ user: null }),
+      resetAll: () => set({ ...INITIAL_STATE, prefs: { ...DEFAULT_PREFS } }),
       updatePrefs: (p) => set((s) => ({ prefs: { ...s.prefs, ...p } })),
       setLastReply: (lastReply) => set({ lastReply }),
     }),

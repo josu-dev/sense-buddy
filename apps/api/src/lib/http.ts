@@ -1,7 +1,7 @@
 import type { Context, Next } from "hono";
 import { auth } from "../auth";
 
-export type AuthedUser = { id: string; email: string; name: string };
+export type AuthedUser = { id: string; email: string; name: string; isAnonymous?: boolean | null };
 export type AppEnv = { Variables: { user: AuthedUser } };
 
 /** Resolve the BetterAuth session (cookie or Bearer token) or 401. */

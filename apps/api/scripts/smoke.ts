@@ -12,6 +12,28 @@ async function call(path: string, init: RequestInit = {}) {
 
 const health = await call("/health");
 console.log("aiMode:", health.aiMode);
+// Real guest flow (BetterAuth anonymous plugin): fresh user + Bearer token,
+// rename after sign-in, revoke on sign-out.
+{
+  const anon = await fetch(`${base}/api/auth/sign-in/anonymous`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  const anonToken = anon.headers.get("set-auth-token");
+  const anonBody = (await anon.json().catch(() => null)) as { user?: { id: string; name: string; isAnonymous?: boolean } } | null;
+  console.log(`POST /api/auth/sign-in/anonymous → ${anon.status}`, JSON.stringify(anonBody)?.slice(0, 160), `token:${anonToken ? "yes" : "NO"}`);
+  if (!anon.ok || !anonToken || !anonBody?.user?.isAnonymous) throw new Error("FAILED anonymous sign-in");
+  const authz = { Authorization: `Bearer ${anonToken}`, "Content-Type": "application/json" };
+  const meRes = await fetch(`${base}/api/me`, { headers: authz });
+  const me = (await meRes.json().catch(() => null)) as { user?: { name: string }; preference?: unknown } | null;
+  console.log(`GET /api/me (guest) → ${meRes.status}`, `name:${me?.user?.name}`, `preference:${me?.preference === null ? "null(new)" : "set"}`);
+  if (!meRes.ok || me?.preference !== null) throw new Error("FAILED guest /api/me");
+  await fetch(`${base}/api/auth/update-user`, { method: "POST", headers: authz, body: JSON.stringify({ name: "Smoke Guest" }) });
+  const me2 = (await (await fetch(`${base}/api/me`, { headers: authz })).json()) as { user?: { name: string } };
+  if (me2.user?.name !== "Smoke Guest") throw new Error("FAILED guest rename");
+  console.log("guest rename → Smoke Guest OK");
+  const out = await fetch(`${base}/api/auth/sign-out`, { method: "POST", headers: authz, body: "{}" });
+  const meAfter = await fetch(`${base}/api/me`, { headers: authz });
+  console.log(`POST /api/auth/sign-out → ${out.status}, /api/me after → ${meAfter.status}`);
+  if (!out.ok || meAfter.status !== 401) throw new Error("FAILED sign-out");
+}
 const login = await call("/api/dev/mock-login", { method: "POST", body: JSON.stringify({ provider: "google", name: "Smoke Tester" }) });
 const auth = { Authorization: `Bearer ${login.token}` };
 await call("/api/me", { headers: auth });

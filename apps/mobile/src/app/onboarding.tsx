@@ -1,14 +1,19 @@
 import type { Mode } from "@sense-buddy/shared";
 import { router } from "expo-router";
-import { ArrowLeft, Ear, Eye, type LucideIcon } from "lucide-react-native";
-import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { BigButton, BrandMark, Screen } from "../components/ui";
+import { Ear, Eye, type LucideIcon } from "lucide-react-native";
+import { useEffect, useState } from "react";
+import { BackHandler, Pressable, ScrollView, Text, View } from "react-native";
+import { BackButton, BigButton, BrandMark, Screen } from "../components/ui";
 import { useStrings } from "../lib/i18n";
 import { useBuddyStore } from "../lib/store";
 import { useThemeColors } from "../lib/theme";
 import { speak } from "../lib/voice";
 
+/**
+ * Two steps: welcome → "how can I help you best?" (mode).
+ * The name used to be step 3 here, but it now comes AFTER sign-in: guests
+ * pick it on the login screen, OAuth users bring it from their profile.
+ */
 export default function Onboarding() {
   const completeOnboarding = useBuddyStore((s) => s.completeOnboarding);
   const prefs = useBuddyStore((s) => s.prefs);
@@ -16,7 +21,19 @@ export default function Onboarding() {
   const C = useThemeColors();
   const [step, setStep] = useState(0);
   const [mode, setMode] = useState<Mode>("visual");
-  const [name, setName] = useState("");
+
+  // System back (Android gesture/button) must walk the onboarding steps, not
+  // pop the route — onboarding is the root, so popping would exit the app.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (step > 0) {
+        setStep(step - 1);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [step]);
 
   const MODE_CARDS: { mode: Mode; Icon: LucideIcon; title: string; body: string; color: string }[] = [
     { mode: "visual", Icon: Eye, title: S.obVisualTitle, body: S.obVisualBody, color: "#FFB224" },
@@ -29,6 +46,12 @@ export default function Onboarding() {
       speak(S.obSpeakVisual, prefs);
     }
   };
+
+  const backTopLeft = (target: number) => (
+    <View className="flex-row">
+      <BackButton onPress={() => setStep(target)} label={S.obBack} />
+    </View>
+  );
 
   return (
     <Screen>
@@ -49,6 +72,7 @@ export default function Onboarding() {
 
         {step === 1 && (
           <View className="gap-4 pt-4">
+            {backTopLeft(0)}
             <Text className="text-3xl font-bold text-paper" accessibilityRole="header">
               {S.obQ}
             </Text>
@@ -78,43 +102,14 @@ export default function Onboarding() {
               );
             })}
             <Text className="text-base text-muted">{S.obBoth}</Text>
-            <BigButton label={S.obContinue} color={mode === "visual" ? "#FFB224" : "#3EE6FF"} onPress={() => setStep(2)} />
-          </View>
-        )}
-
-        {step === 2 && (
-          <View className="gap-4 pt-4">
-            <Text className="text-3xl font-bold text-paper" accessibilityRole="header">
-              {S.obAlmost}
-            </Text>
-            <Text className="text-lg leading-relaxed text-muted">
-              {S.obNameSub}
-            </Text>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder={S.obNamePh}
-              placeholderTextColor={C.placeholder}
-              accessibilityLabel={S.obNamePh}
-              className="min-h-[64px] rounded-3xl border border-line bg-panel px-5 text-xl text-paper"
-            />
             <BigButton
-              label={S.obCreate}
+              label={S.obContinue}
               color={mode === "visual" ? "#FFB224" : "#3EE6FF"}
               onPress={() => {
-                completeOnboarding(mode, name.trim());
+                completeOnboarding(mode);
                 router.replace("/login");
               }}
             />
-            <Pressable
-              onPress={() => setStep(1)}
-              accessibilityRole="button"
-              accessibilityLabel={S.obBack}
-              className="flex-row items-center justify-center gap-1 py-2 active:opacity-60"
-            >
-              <ArrowLeft size={20} strokeWidth={2.25} color={C.muted} />
-              <Text className="text-center text-lg text-muted">{S.obBack}</Text>
-            </Pressable>
           </View>
         )}
       </ScrollView>
