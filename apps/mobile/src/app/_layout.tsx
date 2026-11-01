@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, router, usePathname, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
-import { View } from "react-native";
+import { LogBox, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { api, getToken, onUnauthorized } from "../lib/api";
 import { useBuddyStore, useHydrated } from "../lib/store";
@@ -13,6 +13,15 @@ import { stopSpeaking } from "../lib/voice";
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
+
+// Our code never uses ImageBackground — this warning is fired transitively by
+// react-native-css-interop (NativeWind), which touches RN's deprecated
+// `ImageBackground` getter at import time to register className remapping.
+// No fixed version exists yet (0.2.7 is latest), so the warning is unactionable
+// noise on every reload; ignore exactly that message. The
+// no-restricted-imports rule in eslint.config.js guards the flip side: nobody
+// can add a real ImageBackground usage that this ignore would hide.
+LogBox.ignoreLogs(["ImageBackground is deprecated"]);
 
 /**
  * Global session guard: any API call answering 401 (deleted account,

@@ -1,5 +1,5 @@
+import { isRunningInExpoGo } from "expo";
 import * as AuthSession from "expo-auth-session";
-import Constants from "expo-constants";
 import * as Crypto from "expo-crypto";
 import * as WebBrowser from "expo-web-browser";
 import { Platform } from "react-native";
@@ -47,7 +47,12 @@ export function getGoogleClientId(): string | null {
 
 /** False in Expo Go (redirect can't be allowlisted) or without a client ID. */
 export function isGoogleAuthAvailable(): boolean {
-  if (Constants.appOwnership === "expo") return false;
+  // isRunningInExpoGo (native ExpoGo module probe) replaces the deprecated
+  // Constants.appOwnership check with identical semantics: true ONLY in Expo
+  // Go — dev builds and standalone both report false. (Do NOT use
+  // Constants.executionEnvironment here: its StoreClient value conflates Expo
+  // Go with dev builds, where the custom-scheme redirect works fine.)
+  if (isRunningInExpoGo()) return false;
   return !!getGoogleClientId();
 }
 

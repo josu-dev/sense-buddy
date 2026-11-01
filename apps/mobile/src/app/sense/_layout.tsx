@@ -1,4 +1,4 @@
-import { Tabs } from "expo-router";
+import { Tabs } from "expo-router/js-tabs";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StageHeader } from "../../components/ui";
