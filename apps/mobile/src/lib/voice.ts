@@ -9,21 +9,21 @@ import type { Prefs } from "./store";
  * Buddy speaks (visual mode + Say mode). On-device TTS: free, offline, private.
  * `language` overrides the app language for this utterance only (Say-mode
  * per-message picker); when omitted the effective app language is used.
+ *
+ * Always resolves an explicit installed voice for the language (same as
+ * `speakIn`): a bare `language` hint lets the OS silently substitute another
+ * language's voice (e.g. Spanish text read with an English accent).
  */
-export function speak(text: string, prefs: Prefs, onDone?: () => void, language?: string) {
-  Speech.stop();
-  Speech.speak(text, {
-    rate: prefs.voiceRate,
-    pitch: prefs.voicePitch,
-    language: language ?? getTtsLang(),
-    onDone,
-    onStopped: onDone,
-    onError: onDone,
-  });
+export function speak(text: string, prefs: Prefs, onDone?: () => void, language?: string): Promise<void> {
+  return speakIn(text, prefs, language ?? getTtsLang(), onDone);
 }
 
+/** Bumps on every speak/stop so a stale async lookup never talks over a newer action. */
+let speakSeq = 0;
+
 export function stopSpeaking() {
-  Speech.stop();
+  speakSeq += 1;
+  void Speech.stop();
 }
 
 type AvailVoice = Awaited<ReturnType<typeof Speech.getAvailableVoicesAsync>>[number];
@@ -42,7 +42,7 @@ async function bestVoiceId(bcp47: string): Promise<string | undefined> {
   } catch {
     return undefined;
   }
-  const norm = (s: string) => s.toLowerCase().replace("_", "-");
+  const norm = (s: string) => s.toLowerCase().replace(/_/g, "-");
   const want = norm(bcp47);
   const prefix = want.split("-")[0];
   return (
@@ -52,12 +52,18 @@ async function bestVoiceId(bcp47: string): Promise<string | undefined> {
 }
 
 /**
- * Speak in an explicit language with a matching installed voice (Say mode).
- * Falls back to the language hint alone when no matching voice is installed.
+ * Speak in an explicit language with a matching installed voice (Say mode,
+ * and now every `speak` caller too). Falls back to the language hint alone
+ * when no matching voice is installed.
  */
 export async function speakIn(text: string, prefs: Prefs, language: string, onDone?: () => void) {
+  const seq = (speakSeq += 1);
+  // Stop synchronously so the previous utterance cuts immediately instead of
+  // playing on during the (potentially slow, first-call) voice lookup.
+  void Speech.stop();
   const voice = await bestVoiceId(language);
-  Speech.stop();
+  // Superseded while resolving (a newer speak/stop won): stay silent.
+  if (seq !== speakSeq) return;
   Speech.speak(text, {
     rate: prefs.voiceRate,
     pitch: prefs.voicePitch,
@@ -67,6 +73,15 @@ export async function speakIn(text: string, prefs: Prefs, language: string, onDo
     onStopped: onDone,
     onError: onDone,
   });
+}
+
+/**
+ * Warm the installed-voice cache at boot, so the very first utterance (e.g.
+ * the first See description) already gets an explicit matching voice instead
+ * of speaking after a slow lookup — or with the wrong accent.
+ */
+export function preloadVoices() {
+  void bestVoiceId(getTtsLang()).catch(() => undefined);
 }
 
 /**

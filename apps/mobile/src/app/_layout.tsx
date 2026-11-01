@@ -8,7 +8,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { api, getToken, onUnauthorized } from "../lib/api";
 import { useBuddyStore, useHydrated } from "../lib/store";
 import { ThemeSync, themeVars, useAppTheme, useThemeColors } from "../lib/theme";
-import { stopSpeaking } from "../lib/voice";
+import { preloadVoices, stopSpeaking } from "../lib/voice";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -121,6 +121,11 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const theme = useAppTheme();
+  // Warm the TTS voice cache once: the first lookup can be slow on Android,
+  // and every speak path needs an explicit voice for the correct accent.
+  useEffect(() => {
+    preloadVoices();
+  }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>

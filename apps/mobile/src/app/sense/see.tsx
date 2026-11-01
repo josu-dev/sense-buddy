@@ -51,7 +51,13 @@ export default function See() {
   // With sticky audio the root SpeechNavGuard decides instead (sense-tab
   // hops keep playing, leaving the sense group still cuts).
   useEffect(() => {
-    if (!isFocused && !prefs.stickySenseAudio) stopSpeaking();
+    if (!isFocused && !prefs.stickySenseAudio) {
+      stopSpeaking();
+      // A lookup still in flight may never start (and thus never fire
+      // onStopped/onDone): reset the orb explicitly, like /say does.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOrbState("idle");
+    }
   }, [isFocused, prefs.stickySenseAudio]);
 
   const [permission, requestPermission] = useCameraPermissions();
