@@ -6,6 +6,7 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "setup:local": "node scripts/setup-local.mjs",
+    "setup:android-debug": "node scripts/setup-android-debug.mjs",
     "free:ports": "node scripts/free-ports.mjs",
     "dev:api": "pnpm --filter @sense-buddy/api dev",
     "dev:mobile": "pnpm --filter @sense-buddy/mobile start",
