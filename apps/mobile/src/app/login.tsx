@@ -1,6 +1,6 @@
 import { router } from "expo-router";
-import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { BackHandler, Pressable, Text, TextInput, View } from "react-native";
 import { ACCENT, AppleLogo, BackButton, BigButton, BrandMark, GoogleLogo, Screen } from "../components/ui";
 import { useStrings } from "../lib/i18n";
 import { api, setToken, type AuthUser } from "../lib/api";
@@ -147,6 +147,28 @@ export default function Login() {
     }
   };
 
+  /** Back to the onboarding mode step this flow came from. Drops a pending guest session first so it isn't orphaned. */
+  const backToOnboarding = () => {
+    if (busy) return;
+    void dropGuestSession().finally(() => router.replace({ pathname: "/onboarding", params: { step: "mode" } }));
+  };
+
+  // System back (Android gesture/button) mirrors the top-left arrow: name
+  // step → providers, providers → onboarding mode step. replace() keeps login
+  // out of the history, so onboarding step 0 still exits the app.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (step === "guestName") {
+        if (!savingName) setStep("providers");
+        return true;
+      }
+      backToOnboarding();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- backToOnboarding/dropGuestSession are render-local by design; busy/step/savingName keep the closure fresh.
+  }, [step, busy, savingName]);
+
   const saveGuestName = async (skip: boolean) => {
     if (!guestUser || savingName) return;
     setSavingName(true);
@@ -209,7 +231,10 @@ export default function Login() {
 
   return (
     <Screen>
-      <View className="gap-4 pt-10">
+      <View className="gap-4 pt-2">
+        <View className="flex-row">
+          <BackButton onPress={backToOnboarding} label={S.obBack} />
+        </View>
         <BrandMark size={48} />
         <Text className="text-center text-4xl font-bold text-paper" accessibilityRole="header">
           {S.loginHi}

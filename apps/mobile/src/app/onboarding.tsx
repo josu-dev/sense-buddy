@@ -1,5 +1,5 @@
 import type { Mode } from "@sense-buddy/shared";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ear, Eye, Megaphone, type LucideIcon } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { BackHandler, Pressable, ScrollView, Text, View } from "react-native";
@@ -19,7 +19,10 @@ export default function Onboarding() {
   const prefs = useBuddyStore((s) => s.prefs);
   const S = useStrings();
   const C = useThemeColors();
-  const [step, setStep] = useState(0);
+  // Back-from-login lands on the mode step it came from (?step=mode);
+  // fresh launches and post-delete restarts land on welcome (no param).
+  const { step: initialStep } = useLocalSearchParams<{ step?: string }>();
+  const [step, setStep] = useState(initialStep === "mode" ? 1 : 0);
   const [mode, setMode] = useState<Mode>("visual");
 
   // System back (Android gesture/button) must walk the onboarding steps, not
@@ -76,7 +79,9 @@ export default function Onboarding() {
         )}
 
         {step === 1 && (
-          <View className="gap-4 pt-4">
+          // pt-2 + back row first: identical top geometry to /login, so the
+          // back arrow stays pinned (no shift) on the mode ↔ login cut.
+          <View className="gap-4 pt-2">
             {backTopLeft(0)}
             <Text className="text-3xl font-bold text-paper" accessibilityRole="header">
               {S.obQ}
