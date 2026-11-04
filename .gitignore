@@ -9,3 +9,4 @@ dist/
 *.db-*
 apps/api/data/
 coverage/
+.codegraph/

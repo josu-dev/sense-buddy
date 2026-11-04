@@ -102,8 +102,8 @@ app.onError((err, c) => {
   return c.json({ error: "internal_error" }, 500);
 });
 
-serve({ fetch: app.fetch, port: env.port }, (info) => {
-  console.log(`Sense Buddy API on http://localhost:${info.port} (AI: ${aiMode()}, mockAuth: ${env.allowMockAuth})`);
+serve({ fetch: app.fetch, port: env.port, hostname: "0.0.0.0" }, (info) => {
+  console.log(`Sense Buddy API on http://0.0.0.0:${info.port} (AI: ${aiMode()}, mockAuth: ${env.allowMockAuth})`);
 });
 
 export default app;
