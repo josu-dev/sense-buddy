@@ -1,5 +1,7 @@
 # Sense Buddy (SenseBridge)
 
+![Sense Buddy — Sees and hears for you](docs/thumbnail.png)
+
 An assistive multimodal copilot for people who are visually or hearing impaired.
 One friendly orb is the whole interface: it **sees for you** or **hears for you**,
 depending on the very first thing it asks you.

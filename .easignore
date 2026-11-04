@@ -1,0 +1,44 @@
+# Copia de .gitignore raíz + móvil + extras para EAS Build
+# EAS CLI usa este archivo EN VEZ de los .gitignore cuando existe.
+# Ver: https://docs.expo.dev/build-reference/easignore.md
+
+node_modules/
+dist/
+.expo/
+*.log
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+apps/api/data/
+coverage/
+
+# Expo / móvil
+apps/mobile/.expo/
+apps/mobile/dist/
+apps/mobile/web-build/
+apps/mobile/expo-env.d.ts
+apps/mobile/.kotlin/
+apps/mobile/*.orig.*
+apps/mobile/*.jks
+apps/mobile/*.p8
+apps/mobile/*.p12
+apps/mobile/*.key
+apps/mobile/*.mobileprovision
+apps/mobile/.metro-health-check*
+apps/mobile/npm-debug.*
+apps/mobile/yarn-debug.*
+apps/mobile/yarn-error.*
+apps/mobile/.DS_Store
+apps/mobile/*.pem
+apps/mobile/*.tsbuildinfo
+apps/mobile/ios/
+apps/mobile/android/
+
+# Codegraph (contiene daemon.sock que rompe el upload a EAS)
+.codegraph/
+
+# EAS inspect output
+/eas-archive/
+apps/mobile/eas-archive/
